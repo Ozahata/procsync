@@ -1,0 +1,584 @@
+Process Synchronizer
+====================
+:author: Fabiano Ozahata
+:firstname: Fabiano Tsuneo
+:lastname: Maurer Ozahata
+:email: fabiano.ozahata@gmail.com
+:authorinitials: FTMO
+:revdate: 2012-04-24
+:revnumber: 0.1
+:toc:
+:icons:
+:numbered:
+
+== Introduction
+The Process Synchronizer is a application that help make synchronization between
+applications depending of the necessity.
+
+Basically the application wait a requirement, with the requirement will look to 
+a list of action (procedure that the application can make) and follow the steps 
+wrote in the procedure.
+
+=== List of actions
+This list will contain the steps that will make when come a request.
+
+The behavior when come a request will be:
+
+- Check if have some origin to filter or get more detail for the destination.
+* If don't have any origin, will use the information passed by the request.
+- For each list of destination, execute the information with the value that 
+have.
+
+The concept is very simple, and have some features that will be helpful depend 
+of the connection you will use.
+
+The information of how you set this actions, you can see in <<Action-Anchor, 
+action list configuration>>. 
+
+=== Running a action
+When a application start, the first step that application make is look how many
+<<Thread-Anchor,threads>> he will launch.
+
+Each connection have the possibility to load a backend that will work properly 
+the way that was developed.
+
+By default is using a MySQL database that will load a table looking for a row to
+be process and when find will start the action that was requested, in mean while
+will update the row in case have some error or delete when the row was executed
+with success. 
+
+
+[[Application-Anchor]]
+== Application Config
+
+The main of settings files that will contain the general settings of the 
+application.
+
+.Definitions
+[options="header,autowidth",cols="^,<,^,^,asciidoc"]
+|=========================================
+| Session    | Attribute       | Opt | Default | Description
+| application 4+| Contain the basic settings using by the application.
+| application | name            |  N  |         |Name of the instance of the 
+application that need be unique because will generate a file that will be lock 
+to guarantee a unique instance.
+| application | manager_sleep   |  Y  |   5.0   |
+
+The manager will check every time he wake up if still exist thread alive. + 
+*Caution*: Don't set with 0 other else will consume a lot of CPU.
+
+| application | retry_sleep     |  Y  |   5.0   |When have some error in the 
+application an can by recover give a time, will use this value to sleep and 
+after retry again (In seconds). + 
+*Caution*: Don't set with 0 other else will consume a lot of CPU (In case have 
+problem with the thread manager) and possible a problem with garbage 
+collection/memory/etc of backends.
+
+| application | script_path     |  Y  | ./scripts |Directory that will contain 
+additional scripts provide by the user to be use in the connections
+| mysql      | unix_socket     |  Y  |           |When wish use socket file, see 
+more in link:http://dev.mysql.com/doc/en/connecting.html[mysql page].
+| python     | path            |  Y  | ./scripts/python |Is the place that will 
+be set in the python enviroment to call the modules requested in the python 
+backend. 
+| logger     | log_handler     |  Y  |  syslog   |Is the handler that will use
+to log the information, you can choose syslog or file_rotating and the settings
+you see below.
+| logger     | log_level       |  Y  |ERROR      |Sets the threshold for this 
+logger to level. 
+
+Logging messages which are less severe than level will be ignored. 
+
+The level need be upcase and this are the available.
+
+- CRITICAL
+- FATAL
+- ERROR
+- WARNING
+- WARN
+- INFO
+- DEBUG
+- NOTSET
+
+| logger     | format          |  Y  |      |Format the output of the message.
+
+For more details, please check 
+link:http://docs.python.org/library/logging.html#logrecord-attributes[log record
+ attributes].
+
+The default use is: 
+[%(process)d/%(thread)d/%(name)s] %(levelname)s: %(message)s
+
+For file rotate if you wish insert the date, replace to:
+%(asctime)s [%(process)d/%(thread)d/%(name)s] %(levelname)s: %(message)s
+
+| logger => syslog      4+| This settings is related if you choose the syslog in
+log_handler. 
+ 
+| logger     | address         |  Y  | /dev/log |
+| logger     | facility        |  Y  | local0   |
+| logger => file_rotating  4+| This settings is related if you choose the 
+file_rotating in log_handler. 
+| logger     | filename        |  Y  |          |File that will use to log.
+
+By default will get the name of instance and put in the temporary directory of
+the unix.
+
+| logger     | mode            |  Y  |    a     |Mode of record. 
+
+Default: append.
+
+| logger     | maxBytes        |  Y  | 10485760 |If maxBytes is zero, rollover 
+never occurs. 
+
+Default: 10 MB.
+
+| logger     | backupCount     |  Y  |   100    |If backupCount is non-zero, the
+system will save old log files by appending the extensions ‘.1’, ‘.2’ etc., to 
+the filename.
+| logger     | encoding        |  Y  |          |If encoding is not None, it is 
+used to open the file with that encoding. 
+
+Default: None.
+
+| logger     | delay           |  Y  |     0    |If delay is true, then file 
+opening is deferred until the first call to emit(). 
+
+By default, the file grows indefinitely.
+
+| logger     | verbose         |  Y  |    0     |If zero will only log the 
+normal information.
+
+For now we have only level 1 that will write the result of the origin.
+|=========================================
+
+[[Action-Anchor]]
+== Action List
+
+Regarding the action list, that need be a xml and inside we will have a root tag 
+(that will be discard for the applicatio when load) and the structure necessary 
+to run.
+
+The structure will be like this:
+
+[source, XML]
+---------------------------------------------------------------------
+<root>
+    <action ...>
+        <origin ...></origin>
+        <destinations ...>
+            <destination ...></destination>
+            ...
+        </destinations>
+    </action>
+    ...
+    <action ...>
+        ...
+    </action>
+    <replicate ... />
+</root>
+---------------------------------------------------------------------
+
+Inside the root tag we will be able to have a action or replicate tag that each 
+one have the owns attributes that we can see below. 
+
+=== Attribute settings
+
+Each tag have your own time of attribute that you can set, check the list below.
+
+.Action List Definitions
+[options="header,autowidth",cols="^,<,^,^,<"]
+|=========================================
+| Parameter    | Attribute       | Opt | Default | Description
+| Action     4+| This tag is necessary and anything child of root that don't 
+have this name will be discard.
+| Action       | name            |  N  |         | Name of the action that 
+reference the field action_name in the queue.               
+| Action       | retry           |  Y  |    0    | 
+
+Number of retries that will re-process if have some error. +
+The default zero means that if have a error will not re-process.
+                         
+| Action       | reprocess_time  |  Y  |   180   | Time in seconds to re-process 
+the action.                                            
+| Action       | duplicate       |  Y  |         | 
+
+Useful when you have other action that have the same origin and destination 
+query but you need a different connection. +                                             
+The format consist in: name_of_action, origin_connection, 
+destination_connectio1, .. +
+When you wish of one of connection be the same that the original, just leave the 
+arg empty. + 
+Remember that will be duplicate and can't remove any destination. +         
+If you wish add more that one duplication, separate by ";" +    
+Ex.: We have a action X that have origin Y and destinations Z, W, Q. +                
+We wish two new actions that: +                                               
+1 - Action: A, Origin: B, Destination: C, D, E +
+2 - Action: F, Origin: G, Destination: H, same that original, I 
+duplicate="A,B,C,D,E;F,G,H,,I"
+
+| Origin     4+| This tag is optional, in case that don't have this tag, the 
+parameters passed in the queue will re-pass the destination. The result always 
+need be a tuple or int (in case of script that will be the result code).
+| Origin       | connection_name |  N  |  mysql  | 
+
+Name the connection that will search in the connection file, declared in 
+<<Connection-Anchor, connection config>>. +
+
+| Origin       | field_position  |  Y  |         | With the result of 
+<<SP-Search-Row, sp_search_row>>, will set order to be insert to origin, this 
+string need be a numeric value separate by "," in order that need be pass to 
+origin. If not set will considered all the result.
+| Destinations |                 | Y/N |         | Obligatory if have more then 
+one destination.                                       
+| Destinations | connection_name |  N  |  mysql  | 
+
+Name the connection that will search in the connection file, declared in 
+<<Connection-Anchor, connection config>>. +
+In destination, you can execute the same information to many connections 
+separating by ",". +
+If one fail, will put to re-process but still run the others connections. +
+In the connection will contain the way that the request the information.
+       
+| Destinations | stop_on_error   |  Y  |  True   | 
+
+If one of destination have a error how the behaver that need make. +
+If False the process will run all destination and put the row to retry again 
+later.
+ 
+| Destination 4+| The tag is obligatory and if have multiple destinations is 
+necessary the parent be a tag named Destinations.          
+| Destination  | stop_on_error   |  Y  |  True   | Like the same in Destinations 
+tag, this will specify the behaver that is opposite of set on stop_on_error in 
+Destinations tag.                                        
+| Destination  | field_position  |  Y  |         | With the result origin/queue 
+tuple, here we can set order to be insert pass to destination, this string need 
+be a numeric value separate by "," in order that need be pass to destination. 
+If not set will considered all the result.
+| Replicate  4+| 
+
+For each parameter set in the attribute will insert one row in the queue. +                                             
+The Replicate tag need be insert in the after all request of action to make the 
+validation of names.                  
+
+| Replicate    | name            |  N  |         | Name of the action that 
+reference the field action_name in the queue.               
+| Replicate    | to              |  N  |         | Name of actions separate by 
+","                                                     
+|=========================================
+
+*NOTE*: In case of stop_on_error is False and occurs error in more than one
+destination, just the last error will be record.
+
+
+=== Additional Attribute settings
+
+==== MySQL Backends
+[options="header,autowidth",cols="^,<,^,^,asciidoc"]
+|=========================================
+| Parameters         | Attribute       | Opt | Default | Description
+| Origin/Destination | run_method      |  Y  |  query  | 
+
+The value inside the tag will be execute depend of the value defined here.     
+    
+* “query” - Execute like query and adding the values in the query. +
+(Default for origin)                                 
+* “update” - Execute like query and adding the values in the query. +
+The you wish insert, don't forget to put 
+"http://dev.mysql.com/doc/en/insert-on-duplicate.html[ON DUPLICATE KEY]" 
+to make possible re-process if necessary. +
+For the result will return a tuple with affected_rows and insert_id. +
+(Default for destination).
+* “sp” - Execute like stored procedure.                         
+* “sp_update” - Execute like stored procedure but update something. +
+For the result will return a tuple with affected_rows and insert_id.                         
+
+|=========================================
+
+*NOTE*: When the query was executed and don't return rows, normally will show a
+warning (No data - zero rows fetched, selected, or processed), this message is
+suppress and can see only when the log level is debug.
+
+==== Python Backends
+[options="header,autowidth",cols="^,<,^,^,asciidoc"]
+|=========================================
+| Parameters         | Attribute       | Opt | Default | Description
+| Origin/Destination | path            |  Y  |         |If set variable, will 
+replace the default path set in <<Connection-Anchor,application config>>.
+| Origin/Destination | module          |  N  |         |Is the name of the 
+module that will be import to load the class.
+| Origin/Destination | class           |  Y  |         |If the method that you 
+develop have in a class, you need specify the name of the class that will
+be instance passing the dictionary of attributes of tag.
+| Origin/Destination | method          |  N  |   run   |This will be the method
+that the process will call to execute. The method parameters and the return is 
+the same that the class Manager in link:BACKENDS.html[backend].  
+
+*Caution*: If you not declare a class, take care about the name of the method
+to not conflict with a existent.  
+
+|=========================================
+
+
+
+[[Connection-Anchor]]
+== Connection
+
+To make the connection with the other service, the synchronization need a 
+connection that, by default, is setting in the connection.conf.
+
+.Definitions of connection.conf
+[options="header,autowidth",cols="^,<,^,^,<"]
+|=========================================
+| Session            | Attribute       | Opt | Default | Description
+| application_name 4+| Each connection need a unique name that represented by 
+application_name.       
+| application_name   | backend         |  N  |         | 
+
+He will define how type of manager will be used to make the connection. +           
+The default connection is modules.connection.backends.mysql. +                       
+Check the additional attributes in <<Connection-Settings,settings>>.                                                    
+
+|=========================================
+
+[[Connection-Settings]]
+=== Settings
+
+Each backend have your additional definitions that need be add in the 
+connection.conf, checking the list below.
+
+==== MySQL
+This backend is used to execute commands in mysql. For default all connections 
+is created with auto commit.
+
+.modules.connection.backends.mysql
+[options="header,autowidth",cols="<,^,^,<"]
+|=========================================
+| Attribute       | Opt | Default          | Description
+| host            |  Y  |                  | Name of host to connect to. 
+Default: use the local host via a UNIX socket (where applicable).
+| port            |  Y  | 3306             | TCP port of MySQL server.
+| user            |  Y  | User environment | User to authenticate.
+| passwd          |  Y  |                  | Password to authenticate with. 
+Default: no password.
+| db              |  Y  |                  | Database to use. 
+Default: no default database.
+| unix_socket     |  Y  |                  | Location of UNIX socket. 
+Default: use default location or TCP for remote hosts.
+| connect_timeout |  Y  |                  | Abort if connect is not completed 
+within given number of seconds.
+| persistent      |  Y  | False            | If true will create a persistent 
+connection instead each call open a connection and close.
+|=========================================
+
+==== Python
+
+.modules.connection.backends.python
+[options="header,autowidth",cols="<,^,^,<"]
+|=========================================
+| Attribute       | Opt | Default          | Description
+| path            |  Y  |                  |If set variable, will replace the 
+default path set in <<Application-Anchor,application config>>.
+
+|=========================================
+
+*Caution*: When you create a module, please pay attention if you not use any 
+module or class that already already use by the application or your own scripts.
+
+
+[[Thread-Anchor]]
+== Thread
+
+Is the process that will check the request to process. You can have more then 
+one thread executing in the same application.
+
+Each thread will contain a list of the connections that are independent of 
+others threads, for example if you have 2 threads using the same mysql 
+connection, in fact will create two connections for each thread.
+
+Remember that each thread backend will have a persistent connection, so in the 
+example above if both threads as the mysql backend, will have four connections 
+with less two persistent connections. 
+
+.Definitions of thread.conf
+[options="header,autowidth",cols="^,<,^,^,<"]
+|=========================================
+| Session    | Attribute       | Opt | Default | Description
+| application      | run_list        |  Y  |         | 
+
+Contain the threads that will be execute separate by ",". +                       
+In case this information will not set, will search for all application_name.
+    
+| application_name 4+| Each thread need a unique name that represented by 
+application_name.       
+| application_name | backend         |  N  |         | 
+
+He will define how type of manager will be used to run in the thread. +           
+The default thread is modules.thread.backends.mysql. +                       
+Check the additional attributes in <<Thread-Settings,settings>>.                                                    
+
+| application_name | complement      |  Y  |         | 
+
+In case the backend request a additional arguments to the thread, you can set in
+ this place. +
+the argument need be separate by "," and each argument will be treated as 
+string. 
+                    
+| application_name | sleep_sum       |  Y  |   0.5   | Set in seconds, will be 
+add in the sleep count in case don't have a process to be execute. When a 
+request come, this sleep will be reset.                   
+| application_name | sleep_limit     |  Y  |    5    | Set in seconds, represent 
+the maximum time that the thread can sleep until check if have other process to 
+be execute.                                   
+| application_name | action_file     |  Y  |         | In case the thread need 
+other <<Action-Anchor, action file>> to use instead the default.           
+|=========================================
+
+[[Thread-Settings]]
+=== Settings
+
+Each backend have your additional definitions that need be add in the 
+thread.conf, checking the list below
+
+==== MySQL
+
+.modules.thread.backends.mysql
+[options="header,autowidth",cols="<,^,^,<"]
+|=========================================
+| Attribute        | Opt | Default               | Description
+| sp_search_row    |  Y  | ps_search_request    | Search in the table to see if 
+have some row to process (For each row returned will be run a process in order).
+| sp_update_row    |  Y  | ps_update_request    | Update the table related with 
+the information of the thread.
+| sp_replicate_row |  Y  | ps_replicate_request | Used when wish replicate the 
+same queue to other actions.
+| db_name          |  Y  |                       | In case the stored procedures 
+been in other database inside the connection passed.
+|=========================================
+
+.Stored procedure definition
+In case you wish change the files of the attributes that execute a sp and create 
+your own way to get the information, here have the way that the backend work.
+
+[[SP-Search-Row]]
+*sp_search_row* +
+This stored procedure will search in the queue to find if have some one for the 
+thread to be process.
+In this sp we expect that the row that will process have already locked to the 
+thread.
+
+[options="autowidth",cols="<s,<,<"]
+|=========================================
+| Input  | thread_name, complement | 
+
+Will be send by the thread that will help to find, lock and return the row to be 
+execute by the thread. +
+Need remember that in case the program stop for some reason, this sp need be 
+able to get the row again to process
+
+| Output | id, action_name, args  | 
+
+For the thread the most important information need be in the first and second 
+column in the row. +
+The id is the unique identification of the row inside the queue. +
+The action_name is the action that need be process. +
+The "args" means that you can return other information that will pass to the 
+next step.
+|=========================================
+
+*Caution*: If the result return more then one line, each one will process 
+independent, so if one have error the other
+will process and if have a re-process this lines will run again.
+
+
+*sp_update_row* +
+This stored procedure will update the queue with the information send by the 
+thread.
+
+[options="autowidth",cols="<s,<,asciidoc"]
+|=========================================
+| Input  | id, status, message, retry, reprocess_time |
+
+The id is the way that the query will locate the row in the table. +
+The status is the situation that happen in the thread that wish update. +
+
+- 0 - The row was executed with success.
+- 1 - A error occurs if miss some configuration necessary to the application 
+work (ignore retry and reprocess_time).
+- 2 - A error occurs in one of the steps inside the action.
+- 3 - A error from the system was found and can't continue the process.
+
+The message is the information that generated by the process/thread inform 
+what's happen. +
+The retry is send to inform how much times can be re-process. +
+The reprocess_time is the time that will wait between the re-process. 
+(int counted by seconds). 
+
+| Output |   |Are not expect a return.
+|=========================================
+
+
+*sp_replicate_row* +
+This stored procedure will insert others queue to execute the same row to other 
+actions. +
+This sp will call for each action that request to replicate due the complexity 
+of code to split 
+and insert inside the stored procedure
+
+[options="autowidth",cols="<s,<,<"]
+|=========================================
+| Input  | replicate_action, sp_search_row_result | 
+
+The replicate_list contain the name of the new action that need insert. +
+The sp_search_row_result is the information returned by the sp that will send to 
+the sp. 
+
+| Output |   | The same quantity of item in the replicate_list (affected rows). 
+|=========================================
+
+
+
+
+=== Backends
+
+Here we describe how to use a backend of thread and the parameters necessary to 
+work correct.
+
+==== Definition to create a new one.
+
+To create a class that will be in charge of manager the thread, that need follow 
+some rules.
+Inside the file python need have a less one method and one class described 
+below:
+
+[source, Python]
+---------------------------------------------------------------------
+def check_arguments(file_config, thread_key):
+    """
+    Used in the modules.thread.manager to identify how attributes will be 
+    necessary for this module
+    """
+    attribute_necessary = file_config.get_config_value(thread_key, \ 
+    "attribute_necessary", default_value=None)
+    # Validating
+    if attribute_necessary is None:
+        raise AttributeError("attribute_necessary was not declared in [%s]" % \
+        thread_key)
+    # ... put other validations if necessary ... #
+    # Set and return
+    return {
+            "attribute_necessary" : attribute_necessary,
+            ...
+            }
+---------------------------------------------------------------------
+            
+[[Log-Anchor]]
+== Log
+
+For log the information we use the SysLogHandler to manager the log information, 
+but is possible to change to RotatingFileHandler.
+
+Just remember that the SysLogHandler have a limit of character by the syslog of 
+1024 characters.
+
+For the settings, please check the <<Application-Anchor, application config>>.

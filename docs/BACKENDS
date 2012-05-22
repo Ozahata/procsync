@@ -1,0 +1,113 @@
+Description to create a backends 
+================================
+:author: Fabiano Ozahata
+:firstname: Fabiano Tsuneo
+:lastname: Maurer Ozahata
+:email: fabiano.ozahata@gmail.com
+:authorinitials: FTMO
+:revdate: 2012-05-07
+:revnumber: 0.1
+:toc:
+:icons:
+:numbered:
+
+== Considerations
+This file explain how make a implement to a additional module.
+
+In you wish know about the configuration, please check the file link:README.html[readme file].
+
+== Connections
+To create a file that will manager something, we need a less specify some methods 
+and class to make sure that can be call for any of the thread backends and the process module.
+
+=== Location
+Then file need be put inside modules=>connection=>backends
+
+=== Name file
+Try put something that make easy to deduce what the module does.
+
+=== In file
+In the file we need a less one method called check_arguments and a class that will call Manager.
+
+.Method check_arguments
+The first requirement that need be add in the file that will check if all the parameters
+necessary to the class exist to run properly. 
+
+The return will be a dictionary that contain the keys necessary to the class work.
+
+[source,python]
+-----------------------------------
+def check_arguments(file_config, connection_key):
+    """
+    Used in the modules.configuration.ConnectionConfig to identify how attributes will be necessary for this module
+    """
+    # Set and return
+    return {
+            "host" : file_config.get_config_value(connection_key, "host", default_value="localhost"),
+            "port" : file_config.get_config_value(connection_key, "port", default_value=3306),
+            "user" : file_config.get_config_value(connection_key, "user", default_value=getuser()),
+            "passwd" : file_config.get_config_value(connection_key, "passwd", default_value=None),
+            ...
+            }
+-----------------------------------
+
+The first parameter is a instance of connection file (module.tools.Config) that help to get the information necessary
+in the file.
+
+The second parameter is the session name in the file used to get the attributes for that session.             
+
+.Class Manager
+This class will be called by the process to manager the instance and be able to execute the action properly.
+
+In case have a thread with the same name that will manage the request, this class need be able to handler the request
+from the thread.
+
+[source,python]
+-----------------------------------
+class Manager():
+
+    def __init__(self, *args, **kwargs):
+        # In the kwargs will be pass the attributes setting in the file and that you required in the method
+        # check_arguments
+        self.is_necessary_reprocess = False
+        self.retry_sleep = 5
+        
+    def reconnect(self, *args, **kwargs):
+        """
+        Try make the reconnect operation before try execute the run again.
+        Return True if success.
+        """
+        try:
+            return True
+        except:
+            return False
+        
+    def run(self, process, action_value, *args, **kwargs):
+        """
+        Will process the information passed in action_value.
+        """
+        return (None, 1, "Was not implemented yet!")
+-----------------------------------
+
+Stating by the init, we have two necessary variables:
+
+- is_necessary_reprocess - Used in case had a error when try call the method run and need make other operation
+   before call the method again. (Default: False)
+- retry_sleep - In case the is_necessary_reprocess is true, the process will sleep this time and when wake up
+   will call the method reconnect (Used in seconds, default is the retry_sleep of link:README.html#Application-Anchor[application config].).
+   
+The method reconnect will be call when have a error and the variable is_necessary_reprocess is true and wake up
+ after the retry_sleep time. 
+
+The method run will be call by the process that will send the information of the action request to be process
+(in this case Origin or Destination).
+
+The method is responsible to process this information and return a tuple contain 3 informations.
+ 
+ - The return data that will be use for the process.
+ - Result code
+    * 0 - The row was executed with success.
+    * 1 - A error occurs if miss some configuration necessary to the application work (ignore retry and reprocess_time).
+    * 2 - A error occurs in one of the steps inside the action.
+    * 3 - A error from the system was found and can't continue the process.
+ - In case of error the message that describe what happen that was not possible to process.

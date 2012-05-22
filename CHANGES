@@ -1,0 +1,26 @@
+v0.0, 2009-03-12 - First prototype (MySQL sync each other MySQL)
+v0.1, 2009-12-01 - First release
+v0.2, 2009-12-03 - Added the install file
+v0.3, 2010-01-25 - Add function to run module and scripts
+                 - Stop/Result in multiple destination
+v0.4, 2010-04-13 - Add unix socket in connection
+                 - Fix origin don't have the row
+                 - Fix log information
+v0.5, 2010-06-15 - Add daemon/lockfile to choose run in background
+v0.6, 2010-07-26 - Add a connection to module use the same connection of the
+                   sync
+                 - Adding code to debug
+                 - Add argument --verbose
+                 - Add in the lock file the id to be use in the unix service
+v0.7, 2011-10-31 - Fix the log problem with multiple threads
+                 - Update the documentation
+v0.8, 2012-05-30 - Restructuring for open source
+                 - Change the thread of mysql to a backend for others types
+                 - Change the restriction of call the connection to backend
+                 - Add replication the action to reuse the process to other
+                   connections
+                 - Use the same destination info replay to others connection
+                   (Need all be the same connection type)
+                 - (MySQL) Leave the possibility to the thread load the own
+                   stored procedure instead use only one type.
+ 

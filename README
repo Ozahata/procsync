@@ -1,0 +1,46 @@
+.. ############################################################################
+.. #
+.. # file:     README
+.. #
+.. # Purpose:  Holds basic information about procsync application, 
+.. #           in markdown format for GitHub.
+.. #
+.. # Note:     This file is part of procsync application, and should not be 
+.. #           used or executed separately.
+.. #
+.. ############################################################################
+.. #
+.. # Copyright 2012 Process Synchronizer (procsync)
+.. # 
+.. # Licensed under the Apache License, Version 2.0 (the "License"); you may
+.. # not use this file except in compliance with the License. You may obtain
+.. # a copy of the License at
+.. #
+.. #     http://www.apache.org/licenses/LICENSE-2.0
+.. #
+.. # Unless required by applicable law or agreed to in writing, software
+.. # distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+.. # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+.. # License for the specific language governing permissions and limitations
+.. # under the License.
+.. #
+.. ############################################################################
+
+=========
+Process Synchronizer
+=========
+
+*A process synchronizer that, when receive a request, willcheck if have a origin
+ of the data and distributes for n destinations.*
+
+------------
+Introduction
+------------
+
+The motivation behind this project was the necessity of synchronize between two
+MySQL databases but when pass the information to the other was necessary made
+some changes in the value before add in the destination. If the synchronization
+was limited only to sync the fields we can used the replication, but
+the case was, request additional information that will change the result of the 
+field and this case we needed a flexive place that we able to add this queries
+to make the operation.
