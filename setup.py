@@ -27,16 +27,13 @@ setup(
     version=__import__(project_name).VERSION,
     author="Fabiano Tsuneo Maurer Ozahata",
     author_email="fabiano.ozahata@gmail.com",
-    description=("A process synchronizer that, when receive a request, will"
-                 "check if have a origin of the data and distributes for n"
-                 " destinations."),
     license="Apache License v2",
     keywords=["command-line", "synchronizer", "database", "mysql", "python",
               "scripts"],
     url="https://github.com/Ozahata/procsync",
     packages=packages,
     data_files=data_files,
-    long_description=read('README'),
+    long_description=read('README.md'),
     scripts=['procsync/run_sync.py'],
     classifiers=[
         "Development Status :: 1 - Planning",
