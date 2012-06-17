@@ -1,0 +1,1901 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.6" />
+<title>Process Synchronizer</title>
+<style type="text/css">
+/* Shared CSS for AsciiDoc xhtml11 and html5 backends */
+
+/* Default font. */
+body {
+  font-family: Georgia,serif;
+}
+
+/* Title font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+h5 {
+  font-size: 1.0em;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+pre {
+  padding: 0;
+  margin: 0;
+}
+
+#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#email {
+}
+#revnumber, #revdate, #revremark {
+}
+
+#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #888;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toc {
+  margin-bottom: 2.5em;
+}
+
+#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }
+
+
+/*
+ * xhtml11 specific
+ *
+ * */
+
+tt {
+  font-family: monospace;
+  font-size: inherit;
+  color: navy;
+}
+
+div.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overriden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+/*
+ * html5 specific
+ *
+ * */
+
+.monospaced {
+  font-family: monospace;
+  font-size: inherit;
+  color: navy;
+}
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #527bbd;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #527bbd;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+/*
+ * manpage specific
+ *
+ * */
+
+body.manpage h1 {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-top: 2px solid silver;
+  border-bottom: 2px solid silver;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([2-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  if (!toc) {
+    return;
+  }
+
+  // Delete existing TOC entries in case we're reloading the TOC.
+  var tocEntriesToRemove = [];
+  var i;
+  for (i = 0; i < toc.childNodes.length; i++) {
+    var entry = toc.childNodes[i];
+    if (entry.nodeName == 'div'
+     && entry.getAttribute("class")
+     && entry.getAttribute("class").match(/^toclevel/))
+      tocEntriesToRemove.push(entry);
+  }
+  for (i = 0; i < tocEntriesToRemove.length; i++) {
+    toc.removeChild(tocEntriesToRemove[i]);
+  }
+
+  // Rebuild TOC entries.
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  // Delete existing footnote entries in case we're reloading the footnodes.
+  var i;
+  var noteholder = document.getElementById("footnotes");
+  if (!noteholder) {
+    return;
+  }
+  var entriesToRemove = [];
+  for (i = 0; i < noteholder.childNodes.length; i++) {
+    var entry = noteholder.childNodes[i];
+    if (entry.nodeName == 'div' && entry.getAttribute("class") == "footnote")
+      entriesToRemove.push(entry);
+  }
+  for (i = 0; i < entriesToRemove.length; i++) {
+    noteholder.removeChild(entriesToRemove[i]);
+  }
+
+  // Rebuild footnote entries.
+  var cont = document.getElementById("content");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      var note = spans[i].getAttribute("data-note");
+      if (!note) {
+        // Use [\s\S] in place of . so multi-line matches work.
+        // Because JavaScript has no s (dotall) regex flag.
+        note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+        spans[i].innerHTML =
+          "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+        spans[i].setAttribute("data-note", note);
+      }
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+},
+
+install: function(toclevels) {
+  var timerId;
+
+  function reinstall() {
+    asciidoc.footnotes();
+    if (toclevels) {
+      asciidoc.toc(toclevels);
+    }
+  }
+
+  function reinstallAndRemoveTimer() {
+    clearInterval(timerId);
+    reinstall();
+  }
+
+  timerId = setInterval(reinstall, 500);
+  if (document.addEventListener)
+    document.addEventListener("DOMContentLoaded", reinstallAndRemoveTimer, false);
+  else
+    window.onload = reinstallAndRemoveTimer;
+}
+
+}
+asciidoc.install(2);
+/*]]>*/
+</script>
+</head>
+<body class="article">
+<div id="header">
+<h1>Process Synchronizer</h1>
+<span id="author">Fabiano Ozahata</span><br />
+<span id="email"><tt>&lt;<a href="mailto:fabiano.ozahata@gmail.com">fabiano.ozahata@gmail.com</a>&gt;</tt></span><br />
+<span id="revnumber">version 0.1,</span>
+<span id="revdate">2012-04-24</span>
+<div id="toc">
+  <div id="toctitle">Table of Contents</div>
+  <noscript><p><b>JavaScript must be enabled in your browser to display the table of contents.</b></p></noscript>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_introduction">1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The Process Synchronizer is a application that help make synchronization between
+applications depending of the necessity.</p></div>
+<div class="paragraph"><p>Basically the application wait a requirement, with the requirement will look to
+a list of action (procedure that the application can make) and follow the steps
+wrote in the procedure.</p></div>
+<div class="sect2">
+<h3 id="_list_of_actions">1.1. List of actions</h3>
+<div class="paragraph"><p>This list will contain the steps that will make when come a request.</p></div>
+<div class="paragraph"><p>The behavior when come a request will be:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Check if have some origin to filter or get more detail for the destination.
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+If don&#8217;t have any origin, will use the information passed by the request.
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+For each list of destination, execute the information with the value that
+have.
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>The concept is very simple, and have some features that will be helpful depend
+of the connection you will use.</p></div>
+<div class="paragraph"><p>The information of how you set this actions, you can see in <a href="#Action-Anchor">action list configuration</a>.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_running_a_action">1.2. Running a action</h3>
+<div class="paragraph"><p>When a application start, the first step that application make is look how many
+<a href="#Thread-Anchor">threads</a> he will launch.</p></div>
+<div class="paragraph"><p>Each connection have the possibility to load a backend that will work properly
+the way that was developed.</p></div>
+<div class="paragraph"><p>By default is using a MySQL database that will load a table looking for a row to
+be process and when find will start the action that was requested, in mean while
+will update the row in case have some error or delete when the row was executed
+with success.</p></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="Application-Anchor">2. Application Config</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>The main of settings files that will contain the general settings of the
+application.</p></div>
+<div class="tableblock">
+<table rules="all"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 1. Definitions</caption>
+<col />
+<col />
+<col />
+<col />
+<col />
+<thead>
+<tr>
+<th align="center" valign="top"> Session    </th>
+<th align="left" valign="top"> Attribute       </th>
+<th align="center" valign="top"> Opt </th>
+<th align="center" valign="top"> Default </th>
+<th align="left" valign="top"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center" valign="top"><p class="table">application</p></td>
+<td colspan="4" align="left" valign="top"><p class="table">Contain the basic settings using by the application.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">application</p></td>
+<td align="left" valign="top"><p class="table">name</p></td>
+<td align="center" valign="top"><p class="table">N</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>Name of the instance of the
+application that need be unique because will generate a file that will be lock
+to guarantee a unique instance.</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">application</p></td>
+<td align="left" valign="top"><p class="table">manager_sleep</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">5.0</p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>The manager will check every time he wake up if still exist thread alive.<br />
+<strong>Caution</strong>: Don&#8217;t set with 0 other else will consume a lot of CPU.</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">application</p></td>
+<td align="left" valign="top"><p class="table">retry_sleep</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">5.0</p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>When have some error in the
+application an can by recover give a time, will use this value to sleep and
+after retry again (In seconds).<br />
+<strong>Caution</strong>: Don&#8217;t set with 0 other else will consume a lot of CPU (In case have
+problem with the thread manager) and possible a problem with garbage
+collection/memory/etc of backends.</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">application</p></td>
+<td align="left" valign="top"><p class="table">script_path</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">./scripts</p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>Directory that will contain
+additional scripts provide by the user to be use in the connections</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">mysql</p></td>
+<td align="left" valign="top"><p class="table">unix_socket</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>When wish use socket file, see
+more in <a href="http://dev.mysql.com/doc/en/connecting.html">mysql page</a>.</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">python</p></td>
+<td align="left" valign="top"><p class="table">path</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">./scripts/python</p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>Is the place that will
+be set in the python enviroment to call the modules requested in the python
+backend.</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">logger</p></td>
+<td align="left" valign="top"><p class="table">log_handler</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">syslog</p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>Is the handler that will use
+to log the information, you can choose syslog or file_rotating and the settings
+you see below.</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">logger</p></td>
+<td align="left" valign="top"><p class="table">log_level</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">ERROR</p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>Sets the threshold for this
+logger to level.</p></div>
+<div class="paragraph"><p>Logging messages which are less severe than level will be ignored.</p></div>
+<div class="paragraph"><p>The level need be upcase and this are the available.</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+CRITICAL
+</p>
+</li>
+<li>
+<p>
+FATAL
+</p>
+</li>
+<li>
+<p>
+ERROR
+</p>
+</li>
+<li>
+<p>
+WARNING
+</p>
+</li>
+<li>
+<p>
+WARN
+</p>
+</li>
+<li>
+<p>
+INFO
+</p>
+</li>
+<li>
+<p>
+DEBUG
+</p>
+</li>
+<li>
+<p>
+NOTSET
+</p>
+</li>
+</ul></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">logger</p></td>
+<td align="left" valign="top"><p class="table">format</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>Format the output of the message.</p></div>
+<div class="paragraph"><p>For more details, please check
+<a href="http://docs.python.org/library/logging.html#logrecord-attributes">log record
+ attributes</a>.</p></div>
+<div class="paragraph"><p>The default use is:
+[%(process)d/%(thread)d/%(name)s] %(levelname)s: %(message)s</p></div>
+<div class="paragraph"><p>For file rotate if you wish insert the date, replace to:
+%(asctime)s [%(process)d/%(thread)d/%(name)s] %(levelname)s: %(message)s</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">logger &#8658; syslog</p></td>
+<td colspan="4" align="left" valign="top"><p class="table">This settings is related if you choose the syslog in
+log_handler.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">logger</p></td>
+<td align="left" valign="top"><p class="table">address</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">/dev/log</p></td>
+<td align="left" valign="top"><div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">logger</p></td>
+<td align="left" valign="top"><p class="table">facility</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">local0</p></td>
+<td align="left" valign="top"><div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">logger &#8658; file_rotating</p></td>
+<td colspan="4" align="left" valign="top"><p class="table">This settings is related if you choose the
+file_rotating in log_handler.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">logger</p></td>
+<td align="left" valign="top"><p class="table">filename</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>File that will use to log.</p></div>
+<div class="paragraph"><p>By default will get the name of instance and put in the temporary directory of
+the unix.</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">logger</p></td>
+<td align="left" valign="top"><p class="table">mode</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">a</p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>Mode of record.</p></div>
+<div class="paragraph"><p>Default: append.</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">logger</p></td>
+<td align="left" valign="top"><p class="table">maxBytes</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">10485760</p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>If maxBytes is zero, rollover
+never occurs.</p></div>
+<div class="paragraph"><p>Default: 10 MB.</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">logger</p></td>
+<td align="left" valign="top"><p class="table">backupCount</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">100</p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>If backupCount is non-zero, the
+system will save old log files by appending the extensions ‘.1’, ‘.2’ etc., to
+the filename.</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">logger</p></td>
+<td align="left" valign="top"><p class="table">encoding</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>If encoding is not None, it is
+used to open the file with that encoding.</p></div>
+<div class="paragraph"><p>Default: None.</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">logger</p></td>
+<td align="left" valign="top"><p class="table">delay</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">0</p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>If delay is true, then file
+opening is deferred until the first call to emit().</p></div>
+<div class="paragraph"><p>By default, the file grows indefinitely.</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">logger</p></td>
+<td align="left" valign="top"><p class="table">verbose</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">0</p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>If zero will only log the
+normal information.</p></div>
+<div class="paragraph"><p>For now we have only level 1 that will write the result of the origin.</p></div></div></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="Action-Anchor">3. Action List</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Regarding the action list, that need be a xml and inside we will have a root tag
+(that will be discard for the applicatio when load) and the structure necessary
+to run.</p></div>
+<div class="paragraph"><p>The structure will be like this:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.5
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">&lt;root&gt;</span></span>
+    <span style="font-weight: bold"><span style="color: #0000FF">&lt;action</span></span> ...<span style="font-weight: bold"><span style="color: #0000FF">&gt;</span></span>
+        <span style="font-weight: bold"><span style="color: #0000FF">&lt;origin</span></span> ...<span style="font-weight: bold"><span style="color: #0000FF">&gt;&lt;/origin&gt;</span></span>
+        <span style="font-weight: bold"><span style="color: #0000FF">&lt;destinations</span></span> ...<span style="font-weight: bold"><span style="color: #0000FF">&gt;</span></span>
+            <span style="font-weight: bold"><span style="color: #0000FF">&lt;destination</span></span> ...<span style="font-weight: bold"><span style="color: #0000FF">&gt;&lt;/destination&gt;</span></span>
+            ...
+        <span style="font-weight: bold"><span style="color: #0000FF">&lt;/destinations&gt;</span></span>
+    <span style="font-weight: bold"><span style="color: #0000FF">&lt;/action&gt;</span></span>
+    ...
+    <span style="font-weight: bold"><span style="color: #0000FF">&lt;action</span></span> ...<span style="font-weight: bold"><span style="color: #0000FF">&gt;</span></span>
+        ...
+    <span style="font-weight: bold"><span style="color: #0000FF">&lt;/action&gt;</span></span>
+    <span style="font-weight: bold"><span style="color: #0000FF">&lt;replicate</span></span> ... <span style="font-weight: bold"><span style="color: #0000FF">/&gt;</span></span>
+<span style="font-weight: bold"><span style="color: #0000FF">&lt;/root&gt;</span></span></tt></pre></div></div>
+<div class="paragraph"><p>Inside the root tag we will be able to have a action or replicate tag that each
+one have the owns attributes that we can see below.</p></div>
+<div class="sect2">
+<h3 id="_attribute_settings">3.1. Attribute settings</h3>
+<div class="paragraph"><p>Each tag have your own time of attribute that you can set, check the list below.</p></div>
+<div class="tableblock">
+<table rules="all"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 2. Action List Definitions</caption>
+<col />
+<col />
+<col />
+<col />
+<col />
+<thead>
+<tr>
+<th align="center" valign="top"> Parameter    </th>
+<th align="left" valign="top"> Attribute       </th>
+<th align="center" valign="top"> Opt </th>
+<th align="center" valign="top"> Default </th>
+<th align="left" valign="top"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center" valign="top"><p class="table">Action</p></td>
+<td colspan="4" align="left" valign="top"><p class="table">This tag is necessary and anything child of root that don&#8217;t
+have this name will be discard.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Action</p></td>
+<td align="left" valign="top"><p class="table">name</p></td>
+<td align="center" valign="top"><p class="table">N</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">Name of the action that
+reference the field action_name in the queue.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Action</p></td>
+<td align="left" valign="top"><p class="table">retry</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">0</p></td>
+<td align="left" valign="top"><p class="table">Number of retries that will re-process if have some error.<br />
+The default zero means that if have a error will not re-process.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Action</p></td>
+<td align="left" valign="top"><p class="table">reprocess_time</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">180</p></td>
+<td align="left" valign="top"><p class="table">Time in seconds to re-process
+the action.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Action</p></td>
+<td align="left" valign="top"><p class="table">duplicate</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">Useful when you have other action that have the same origin and destination
+query but you need a different connection.<br />
+The format consist in: name_of_action, origin_connection,
+destination_connectio1, ..<br />
+When you wish of one of connection be the same that the original, just leave the
+arg empty.<br />
+Remember that will be duplicate and can&#8217;t remove any destination.<br />
+If you wish add more that one duplication, separate by ";"<br />
+Ex.: We have a action X that have origin Y and destinations Z, W, Q.<br />
+We wish two new actions that:<br />
+1 - Action: A, Origin: B, Destination: C, D, E<br />
+2 - Action: F, Origin: G, Destination: H, same that original, I
+duplicate="A,B,C,D,E;F,G,H,,I"</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Origin</p></td>
+<td colspan="4" align="left" valign="top"><p class="table">This tag is optional, in case that don&#8217;t have this tag, the
+parameters passed in the queue will re-pass the destination. The result always
+need be a tuple or int (in case of script that will be the result code).</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Origin</p></td>
+<td align="left" valign="top"><p class="table">connection_name</p></td>
+<td align="center" valign="top"><p class="table">N</p></td>
+<td align="center" valign="top"><p class="table">mysql</p></td>
+<td align="left" valign="top"><p class="table">Name the connection that will search in the connection file, declared in
+<a href="#Connection-Anchor">connection config</a>.<br /></p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Origin</p></td>
+<td align="left" valign="top"><p class="table">field_position</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">With the result of
+<a href="#SP-Search-Row">sp_search_row</a>, will set order to be insert to origin, this
+string need be a numeric value separate by "," in order that need be pass to
+origin. If not set will considered all the result.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Destinations</p></td>
+<td align="left" valign="top"><p class="table"></p></td>
+<td align="center" valign="top"><p class="table">Y/N</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">Obligatory if have more then
+one destination.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Destinations</p></td>
+<td align="left" valign="top"><p class="table">stop_on_error</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">True</p></td>
+<td align="left" valign="top"><p class="table">If one of destination have a error how the behaver that need make.<br />
+If False the process will run all destination and put the row to retry again
+later.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Destination</p></td>
+<td colspan="4" align="left" valign="top"><p class="table">The tag is obligatory and if have multiple destinations is
+necessary the parent be a tag named Destinations.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Destination</p></td>
+<td align="left" valign="top"><p class="table">connection_name</p></td>
+<td align="center" valign="top"><p class="table">N</p></td>
+<td align="center" valign="top"><p class="table">mysql</p></td>
+<td align="left" valign="top"><p class="table">Name the connection that will search in the connection file, declared in
+<a href="#Connection-Anchor">connection config</a>.<br />
+In destination, you can execute the same information to many connections
+separating by ",".<br />
+If one fail, will put to re-process but still run the others connections.<br />
+In the connection will contain the way that the request the information.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Destination</p></td>
+<td align="left" valign="top"><p class="table">stop_on_error</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">True</p></td>
+<td align="left" valign="top"><p class="table">Like the same in Destinations
+tag, this will specify the behaver that is opposite of set on stop_on_error in
+Destinations tag.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Destination</p></td>
+<td align="left" valign="top"><p class="table">field_position</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">With the result origin/queue
+tuple, here we can set order to be insert pass to destination, this string need
+be a numeric value separate by "," in order that need be pass to destination.
+If not set will considered all the result.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Replicate</p></td>
+<td colspan="4" align="left" valign="top"><p class="table">For each parameter set in the attribute will insert one row in the queue.<br />
+The Replicate tag need be insert in the after all request of action to make the
+validation of names.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Replicate</p></td>
+<td align="left" valign="top"><p class="table">name</p></td>
+<td align="center" valign="top"><p class="table">N</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">Name of the action that
+reference the field action_name in the queue.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Replicate</p></td>
+<td align="left" valign="top"><p class="table">to</p></td>
+<td align="center" valign="top"><p class="table">N</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">Name of actions separate by
+","</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="paragraph"><p><strong>NOTE</strong>: In case of stop_on_error is False and occurs error in more than one
+destination, just the last error will be record.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_additional_attribute_settings">3.2. Additional Attribute settings</h3>
+<div class="sect3">
+<h4 id="_mysql_backends">3.2.1. MySQL Backends</h4>
+<div class="tableblock">
+<table rules="all"
+frame="border"
+cellspacing="0" cellpadding="4">
+<col />
+<col />
+<col />
+<col />
+<col />
+<thead>
+<tr>
+<th align="center" valign="top"> Parameters         </th>
+<th align="left" valign="top"> Attribute       </th>
+<th align="center" valign="top"> Opt </th>
+<th align="center" valign="top"> Default </th>
+<th align="left" valign="top"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center" valign="top"><p class="table">Origin/Destination</p></td>
+<td align="left" valign="top"><p class="table">run_method</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">query</p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>The value inside the tag will be execute depend of the value defined here.</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+“query” - Execute like query and adding the values in the query.<br />
+(Default for origin)
+</p>
+</li>
+<li>
+<p>
+“update” - Execute like query and adding the values in the query.<br />
+The you wish insert, don&#8217;t forget to put
+"<a href="http://dev.mysql.com/doc/en/insert-on-duplicate.html">ON DUPLICATE KEY</a>"
+to make possible re-process if necessary.<br />
+For the result will return a tuple with affected_rows and insert_id.<br />
+(Default for destination).
+</p>
+</li>
+<li>
+<p>
+“sp” - Execute like stored procedure.
+</p>
+</li>
+<li>
+<p>
+“sp_update” - Execute like stored procedure but update something.<br />
+For the result will return a tuple with affected_rows and insert_id.
+</p>
+</li>
+</ul></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Origin/Destination</p></td>
+<td align="left" valign="top"><p class="table">db_name</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>Database to use.</p></div></div></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="paragraph"><p><strong>NOTE</strong>: When the query was executed and don&#8217;t return rows, normally will show a
+warning (No data - zero rows fetched, selected, or processed), this message is
+suppress and can see only when the log level is debug.</p></div>
+<div class="sect4">
+<h5 id="_additional_note">Additional Note</h5>
+<div class="ulist"><ul>
+<li>
+<p>
+If you use a delete or update in the origin or destination, even if not update
+/delete a row, will process with success. If is necessary make this validation,
+you need implement inside a stored procedure.
+</p>
+</li>
+<li>
+<p>
+Reprocess will occurs only in case of deadlock or lock of table.
+</p>
+</li>
+<li>
+<p>
+Retry will work when use a
+<a href="http://dev.mysql.com/doc/en/signal.html">SIGNAL &gt; 9999 (MySQL 5.5+)</a> or when
+have deadlock or lock, code (1205, 1213) check the
+<a href="http://dev.mysql.com/doc/en/error-messages-server.html">MySQL page</a>.
+*
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_python_backends">3.2.2. Python Backends</h4>
+<div class="tableblock">
+<table rules="all"
+frame="border"
+cellspacing="0" cellpadding="4">
+<col />
+<col />
+<col />
+<col />
+<col />
+<thead>
+<tr>
+<th align="center" valign="top"> Parameters         </th>
+<th align="left" valign="top"> Attribute       </th>
+<th align="center" valign="top"> Opt </th>
+<th align="center" valign="top"> Default </th>
+<th align="left" valign="top"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center" valign="top"><p class="table">Origin/Destination</p></td>
+<td align="left" valign="top"><p class="table">path</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>If set variable, will
+replace the default path set in <a href="#Connection-Anchor">application config</a>.</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Origin/Destination</p></td>
+<td align="left" valign="top"><p class="table">module</p></td>
+<td align="center" valign="top"><p class="table">N</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>Is the name of the
+module that will be import to load the class.</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Origin/Destination</p></td>
+<td align="left" valign="top"><p class="table">class</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>If the method that you
+develop have in a class, you need specify the name of the class that will
+be instance passing the dictionary of attributes of tag.</p></div></div></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">Origin/Destination</p></td>
+<td align="left" valign="top"><p class="table">method</p></td>
+<td align="center" valign="top"><p class="table">N</p></td>
+<td align="center" valign="top"><p class="table">run</p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>This will be the method
+that the process will call to execute. The method parameters and the return is
+the same that the class Manager in <a href="BACKENDS.html">backend</a>.</p></div>
+<div class="paragraph"><p><strong>Caution</strong>: If you not declare a class, take care about the name of the method
+to not conflict with a existent.</p></div></div></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="Connection-Anchor">4. Connection</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>To make the connection with the other service, the synchronization need a
+connection that, by default, is setting in the connection.conf.</p></div>
+<div class="tableblock">
+<table rules="all"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 3. Definitions of connection.conf</caption>
+<col />
+<col />
+<col />
+<col />
+<col />
+<thead>
+<tr>
+<th align="center" valign="top"> Session            </th>
+<th align="left" valign="top"> Attribute       </th>
+<th align="center" valign="top"> Opt </th>
+<th align="center" valign="top"> Default </th>
+<th align="left" valign="top"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center" valign="top"><p class="table">application_name</p></td>
+<td colspan="4" align="left" valign="top"><p class="table">Each connection need a unique name that represented by
+application_name.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">application_name</p></td>
+<td align="left" valign="top"><p class="table">backend</p></td>
+<td align="center" valign="top"><p class="table">N</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">He will define how type of manager will be used to make the connection.<br />
+The default connection is modules.connection.backends.mysql.<br />
+Check the additional attributes in <a href="#Connection-Settings">settings</a>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="Connection-Settings">4.1. Settings</h3>
+<div class="paragraph"><p>Each backend have your additional definitions that need be add in the
+connection.conf, checking the list below.</p></div>
+<div class="sect3">
+<h4 id="_mysql">4.1.1. MySQL</h4>
+<div class="paragraph"><p>This backend is used to execute commands in mysql. For default all connections
+is created with auto commit.</p></div>
+<div class="tableblock">
+<table rules="all"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 4. modules.connection.backends.mysql</caption>
+<col />
+<col />
+<col />
+<col />
+<thead>
+<tr>
+<th align="left" valign="top"> Attribute       </th>
+<th align="center" valign="top"> Opt </th>
+<th align="center" valign="top"> Default          </th>
+<th align="left" valign="top"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table">host</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">Name of host to connect to.
+Default: use the local host via a UNIX socket (where applicable).</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">port</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">3306</p></td>
+<td align="left" valign="top"><p class="table">TCP port of MySQL server.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">user</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">User environment</p></td>
+<td align="left" valign="top"><p class="table">User to authenticate.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">passwd</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">Password to authenticate with.
+Default: no password.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">db</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">Database to use.
+Default: no default database.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">unix_socket</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">Location of UNIX socket.
+Default: use default location or TCP for remote hosts.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">connect_timeout</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">Abort if connect is not completed
+within given number of seconds.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">persistent</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">False</p></td>
+<td align="left" valign="top"><p class="table">If true will create a persistent
+connection instead each call open a connection and close.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_python">4.1.2. Python</h4>
+<div class="tableblock">
+<table rules="all"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 5. modules.connection.backends.python</caption>
+<col />
+<col />
+<col />
+<col />
+<thead>
+<tr>
+<th align="left" valign="top"> Attribute       </th>
+<th align="center" valign="top"> Opt </th>
+<th align="center" valign="top"> Default          </th>
+<th align="left" valign="top"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table">path</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">If set variable, will replace the
+default path set in <a href="#Application-Anchor">application config</a>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="paragraph"><p><strong>Caution</strong>: When you create a module, please pay attention if you not use any
+module or class that already already use by the application or your own scripts.</p></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="Thread-Anchor">5. Thread</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Is the process that will check the request to process. You can have more then
+one thread executing in the same application.</p></div>
+<div class="paragraph"><p>Each thread will contain a list of the connections that are independent of
+others threads, for example if you have 2 threads using the same mysql
+connection, in fact will create two connections for each thread.</p></div>
+<div class="paragraph"><p>Remember that each thread backend will have a persistent connection, so in the
+example above if both threads as the mysql backend, will have four connections
+with less two persistent connections.</p></div>
+<div class="tableblock">
+<table rules="all"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 6. Definitions of thread.conf</caption>
+<col />
+<col />
+<col />
+<col />
+<col />
+<thead>
+<tr>
+<th align="center" valign="top"> Session    </th>
+<th align="left" valign="top"> Attribute       </th>
+<th align="center" valign="top"> Opt </th>
+<th align="center" valign="top"> Default </th>
+<th align="left" valign="top"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center" valign="top"><p class="table">application</p></td>
+<td align="left" valign="top"><p class="table">run_list</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">Contain the threads that will be execute separate by ",".<br />
+In case this information will not set, will search for all application_name.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">application_name</p></td>
+<td colspan="4" align="left" valign="top"><p class="table">Each thread need a unique name that represented by
+application_name.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">application_name</p></td>
+<td align="left" valign="top"><p class="table">backend</p></td>
+<td align="center" valign="top"><p class="table">N</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">He will define how type of manager will be used to run in the thread.<br />
+The default thread is modules.thread.backends.mysql.<br />
+Check the additional attributes in <a href="#Thread-Settings">settings</a>.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">application_name</p></td>
+<td align="left" valign="top"><p class="table">complement</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">In case the backend request a additional arguments to the thread, you can set in
+ this place.<br />
+the argument need be separate by "," and each argument will be treated as
+string.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">application_name</p></td>
+<td align="left" valign="top"><p class="table">sleep_sum</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">0.5</p></td>
+<td align="left" valign="top"><p class="table">Set in seconds, will be
+add in the sleep count in case don&#8217;t have a process to be execute. When a
+request come, this sleep will be reset.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">application_name</p></td>
+<td align="left" valign="top"><p class="table">sleep_limit</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">5</p></td>
+<td align="left" valign="top"><p class="table">Set in seconds, represent
+the maximum time that the thread can sleep until check if have other process to
+be execute.</p></td>
+</tr>
+<tr>
+<td align="center" valign="top"><p class="table">application_name</p></td>
+<td align="left" valign="top"><p class="table">action_file</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">In case the thread need
+other <a href="#Action-Anchor">action file</a> to use instead the default.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="Thread-Settings">5.1. Settings</h3>
+<div class="paragraph"><p>Each backend have your additional definitions that need be add in the
+thread.conf, checking the list below</p></div>
+<div class="sect3">
+<h4 id="_mysql_2">5.1.1. MySQL</h4>
+<div class="tableblock">
+<table rules="all"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 7. modules.thread.backends.mysql</caption>
+<col />
+<col />
+<col />
+<col />
+<thead>
+<tr>
+<th align="left" valign="top"> Attribute        </th>
+<th align="center" valign="top"> Opt </th>
+<th align="center" valign="top"> Default               </th>
+<th align="left" valign="top"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table">sp_search_row</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">ps_search_request</p></td>
+<td align="left" valign="top"><p class="table">Search in the table to see if
+have some row to process (For each row returned will be run a process in order).</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">sp_update_row</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">ps_update_request</p></td>
+<td align="left" valign="top"><p class="table">Update the table related with
+the information of the thread.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">sp_replicate_row</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">ps_replicate_request</p></td>
+<td align="left" valign="top"><p class="table">Used when wish replicate the
+same queue to other actions.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">db_name</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">In case the stored procedures
+been in other database inside the connection passed.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="paragraph"><div class="title">Stored procedure definition</div><p>In case you wish change the files of the attributes that execute a sp and create
+your own way to get the information, here have the way that the backend work.</p></div>
+<div class="paragraph" id="SP-Search-Row"><p><strong>sp_search_row</strong><br />
+This stored procedure will search in the queue to find if have some one for the
+thread to be process.
+In this sp we expect that the row that will process have already locked to the
+thread.</p></div>
+<div class="tableblock">
+<table rules="all"
+frame="border"
+cellspacing="0" cellpadding="4">
+<col />
+<col />
+<col />
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table"><strong>Input</strong></p></td>
+<td align="left" valign="top"><p class="table">thread_name, complement</p></td>
+<td align="left" valign="top"><p class="table">Will be send by the thread that will help to find, lock and return the row to be
+execute by the thread.<br />
+Need remember that in case the program stop for some reason, this sp need be
+able to get the row again to process</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><strong>Output</strong></p></td>
+<td align="left" valign="top"><p class="table">id, action_name, args</p></td>
+<td align="left" valign="top"><p class="table">For the thread the most important information need be in the first and second
+column in the row.<br />
+The id is the unique identification of the row inside the queue.<br />
+The action_name is the action that need be process.<br />
+The "args" means that you can return other information that will pass to the
+next step.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="paragraph"><p><strong>Caution</strong>: If the result return more then one line, each one will process
+independent, so if one have error the other
+will process and if have a re-process this lines will run again.</p></div>
+<div class="paragraph"><p><strong>sp_update_row</strong><br />
+This stored procedure will update the queue with the information send by the
+thread.</p></div>
+<div class="tableblock">
+<table rules="all"
+frame="border"
+cellspacing="0" cellpadding="4">
+<col />
+<col />
+<col />
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table"><strong>Input</strong></p></td>
+<td align="left" valign="top"><p class="table">id, status, message, retry, reprocess_time</p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>The id is the way that the query will locate the row in the table.<br />
+The status is the situation that happen in the thread that wish update.<br /></p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+0 - The row was executed with success.
+</p>
+</li>
+<li>
+<p>
+1 - A error occurs if miss some configuration necessary to the application
+work (ignore retry and reprocess_time).
+</p>
+</li>
+<li>
+<p>
+2 - A error occurs in one of the steps inside the action.
+</p>
+</li>
+<li>
+<p>
+3 - A error from the system was found and can&#8217;t continue the process.
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>The message is the information that generated by the process/thread inform
+what&#8217;s happen.<br />
+The retry is send to inform how much times can be re-process.<br />
+The reprocess_time is the time that will wait between the re-process.
+(int counted by seconds).</p></div></div></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><strong>Output</strong></p></td>
+<td align="left" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><div><div class="paragraph"><p>Are not expect a return.</p></div></div></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="paragraph"><p><strong>sp_replicate_row</strong><br />
+This stored procedure will insert others queue to execute the same row to other
+actions.<br />
+This sp will call for each action that request to replicate due the complexity
+of code to split
+and insert inside the stored procedure</p></div>
+<div class="tableblock">
+<table rules="all"
+frame="border"
+cellspacing="0" cellpadding="4">
+<col />
+<col />
+<col />
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table"><strong>Input</strong></p></td>
+<td align="left" valign="top"><p class="table">replicate_action, sp_search_row_result</p></td>
+<td align="left" valign="top"><p class="table">The replicate_list contain the name of the new action that need insert.<br />
+The sp_search_row_result is the information returned by the sp that will send to
+the sp.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table"><strong>Output</strong></p></td>
+<td align="left" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">The same quantity of item in the replicate_list (affected rows).</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_backends">5.2. Backends</h3>
+<div class="paragraph"><p>Here we describe how to use a backend of thread and the parameters necessary to
+work correct.</p></div>
+<div class="sect3">
+<h4 id="_definition_to_create_a_new_one">5.2.1. Definition to create a new one.</h4>
+<div class="paragraph"><p>To create a class that will be in charge of manager the thread, that need follow
+some rules.
+Inside the file python need have a less one method and one class described
+below:</p></div>
+<div class="listingblock">
+<div class="content"><!-- Generator: GNU source-highlight 3.1.5
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite -->
+<pre><tt><span style="font-weight: bold"><span style="color: #0000FF">def</span></span> <span style="font-weight: bold"><span style="color: #000000">check_arguments</span></span><span style="color: #990000">(</span>file_config<span style="color: #990000">,</span> thread_key<span style="color: #990000">):</span>
+<span style="font-style: italic"><span style="color: #9A1900">    """</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    Used in the modules.thread.manager to identify how attributes will be</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    necessary for this module</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    """</span></span>
+    attribute_necessary <span style="color: #990000">=</span> file_config<span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #000000">get_config_value</span></span><span style="color: #990000">(</span>thread_key<span style="color: #990000">,</span> <span style="color: #990000">\</span>
+    <span style="color: #FF0000">"attribute_necessary"</span><span style="color: #990000">,</span> default_value<span style="color: #990000">=</span>None<span style="color: #990000">)</span>
+    <span style="font-style: italic"><span style="color: #9A1900"># Validating</span></span>
+    <span style="font-weight: bold"><span style="color: #0000FF">if</span></span> attribute_necessary <span style="font-weight: bold"><span style="color: #0000FF">is</span></span> None<span style="color: #990000">:</span>
+        <span style="font-weight: bold"><span style="color: #0000FF">raise</span></span> <span style="font-weight: bold"><span style="color: #000000">AttributeError</span></span><span style="color: #990000">(</span><span style="color: #FF0000">"attribute_necessary was not declared in [%s]"</span> <span style="color: #990000">%</span> <span style="color: #990000">\</span>
+        thread_key<span style="color: #990000">)</span>
+    <span style="font-style: italic"><span style="color: #9A1900"># ... put other validations if necessary ... #</span></span>
+    <span style="font-style: italic"><span style="color: #9A1900"># Set and return</span></span>
+    <span style="font-weight: bold"><span style="color: #0000FF">return</span></span> <span style="color: #990000">{</span>
+            <span style="color: #FF0000">"attribute_necessary"</span> <span style="color: #990000">:</span> attribute_necessary<span style="color: #990000">,</span>
+            <span style="color: #990000">...</span>
+            <span style="color: #990000">}</span></tt></pre></div></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="Log-Anchor">6. Log</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>For log the information we use the SysLogHandler to manager the log information,
+but is possible to change to RotatingFileHandler.</p></div>
+<div class="paragraph"><p>Just remember that the SysLogHandler have a limit of character by the syslog of
+1024 characters.</p></div>
+<div class="paragraph"><p>For the settings, please check the <a href="#Application-Anchor">application config</a>.</p></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Version 0.1<br />
+Last updated 2012-06-07 16:51:42 JST
+</div>
+</div>
+</body>
+</html>

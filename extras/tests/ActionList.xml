@@ -1,0 +1,212 @@
+<root>
+    <action name="SimpleSameConnectionSuccess" retry="3" reprocess_time="2">
+        <origin connection_name="procsync_connection" field_position="2" db_name="procsync_db1">
+            SELECT id, text FROM origin WHERE id = %s
+        </origin>
+        <destinations>
+            <destination connection_name="procsync_connection" db_name="procsync_db1">
+            INSERT INTO destination2
+                (id, text)
+            VALUES
+                (%s, %s)
+            ON DUPLICATE KEY
+            UPDATE text = VALUES(text)            
+            </destination>
+        </destinations>
+    </action>
+    <action name="SimpleSameConnectionError" >
+        <origin connection_name="procsync_connection" field_position="2" db_name="procsync_db1">
+            SELECT id, text FROM origin WHERE id = %s
+        </origin>
+        <destinations>
+            <destination connection_name="procsync_connection" db_name="procsync_db1">
+            INSERT INTO destination2
+                (id, text)
+            VALUES
+                (%s, %s)
+            ON DUPLICATE KEY
+            UPDATE wrong_field = VALUES(text)            
+            </destination>
+        </destinations>
+    </action>
+    <action name="SimpleSameConnectionErrorWithRetry" retry="3" reprocess_time="2">
+        <origin connection_name="procsync_connection" field_position="2" db_name="procsync_db1">
+            SELECT id, text FROM origin WHERE id = %s
+        </origin>
+        <destinations>
+            <destination connection_name="procsync_connection" db_name="procsync_db1">
+            INSERT INTO destination2
+                (id, text)
+            VALUES
+                (%s, %s)
+            ON DUPLICATE KEY
+            UPDATE wrong_field = VALUES(text)            
+            </destination>
+        </destinations>
+    </action>
+    <action name="SimpleSameConnectionChange" >
+        <destinations>
+            <destination connection_name="procsync_connection" field_position="2">
+            UPDATE queue
+               SET action_name = 'SimpleSameConnectionSuccess',
+                   server_name = NULL,
+                   process_status = 0,
+                   error_description = NULL,
+                   schedule = NULL
+             WHERE id = %s
+            </destination>
+        </destinations>
+    </action>
+    <action name="SPSameConnectionSuccess" >
+        <destinations>
+            <destination connection_name="procsync_connection" db_name="procsync_db1" field_position="2" run_method="sp">
+                sp_procsync_test_success
+            </destination>
+        </destinations>
+    </action>
+    <action name="SPSameConnectionError" >
+        <destinations>
+            <destination connection_name="procsync_connection" db_name="procsync_db1" field_position="2" run_method="sp">
+                sp_procsync_test_error
+            </destination>
+        </destinations>
+    </action>
+    <action name="SPSameConnectionErrorDuplicate" >
+        <destinations>
+            <destination connection_name="procsync_connection" db_name="procsync_db1" field_position="2" run_method="sp">
+                sp_procsync_test_error_duplicate
+            </destination>
+        </destinations>
+    </action>
+    <action name="SimpleSameConnectionMultipleDestinationSuccess" >
+        <origin connection_name="procsync_connection" field_position="2">
+            SELECT id, from_column_value FROM queue WHERE id = %s
+        </origin>
+        <destinations>
+            <destination connection_name="procsync_connection" field_position="0">
+            UPDATE queue
+               SET action_name = 'SimpleSameConnectionSuccess',
+                   server_name = NULL,
+                   process_status = 0,
+                   error_description = NULL,
+                   schedule = NULL
+             WHERE id = %s
+            </destination>
+            <destination connection_name="procsync_connection" field_position="1">
+            INSERT INTO procsync_db2.destination1
+                (id, text)
+            SELECT id, text
+              FROM procsync_db1.origin
+             WHERE id = %s
+            </destination>
+        </destinations>
+    </action>
+    <action name="MultipleDestinationErrorFirst" >
+        <destinations>
+            <destination connection_name="procsync_connection" field_position="0">
+            SELECT 'WILL STOP HERE'
+              FROM queue
+             WHERE wrong_field = %s
+            </destination>
+            <destination connection_name="procsync_connection" field_position="1">
+            INSERT INTO procsync_db2.destination1
+                (id, text)
+            VALUE
+                (0, 'WILL NOT PASS HERE')
+            </destination>
+        </destinations>
+    </action>
+    <action name="MultipleDestinationResumeFirst" >
+        <destinations>
+            <destination connection_name="procsync_connection" field_position="0" stop_on_error="false">
+            SELECT 'WILL NOT STOP HERE BUT WILL WRITE A ERROR IN THE QUEUE'
+              FROM queue
+             WHERE wrong_field = %s
+            </destination>
+            <destination connection_name="procsync_connection" field_position="2">
+            UPDATE queue
+               SET action_name = 'SimpleSameConnectionSuccess',
+                   server_name = NULL,
+                   process_status = 0,
+                   error_description = NULL,
+                   schedule = NULL
+             WHERE id = %s
+            </destination>
+        </destinations>
+    </action>
+    <action name="ConnectOriginProblem" >
+        <origin connection_name="procsync_connection_problem" field_position="2">
+            SELECT 'WILL NOT MAKE THE SELECT DUE PROBLEM OF CONNECTION'
+        </origin>
+        <destinations>
+            <destination connection_name="procsync_connection" field_position="0">
+            SELECT 'WILL NOT PASS HERE'
+            </destination>
+        </destinations>
+    </action>
+    <action name="ConnectDestinationProblem" >
+        <origin connection_name="procsync_connection" field_position="2" db_name="procsync_db1">
+            SELECT id, text FROM origin WHERE id = %s
+        </origin>
+        <destinations>
+            <destination connection_name="procsync_connection_problem" field_position="0">
+            SELECT 'WILL NOT MAKE THE SELECT DUE PROBLEM OF CONNECTION'
+            </destination>
+        </destinations>
+    </action>
+    <action name="ConnectMultipleDestinationProblem" >
+        <origin connection_name="procsync_connection" field_position="2" db_name="procsync_db1">
+            SELECT id, text FROM origin WHERE id = %s
+        </origin>
+        <destinations>
+            <destination connection_name="procsync_connection" field_position="0">
+            INSERT INTO procsync_db2.destination1
+                (id, text)
+            SELECT id, text
+              FROM procsync_db1.origin
+             WHERE id = %s
+            </destination>
+            <destination connection_name="procsync_connection_problem" field_position="0">
+            SELECT 'WILL NOT MAKE THE SELECT DUE PROBLEM OF CONNECTION'
+            </destination>
+        </destinations>
+    </action>
+    <action name="ConnectMultipleDestinationProblemWithContinue" >
+        <origin connection_name="procsync_connection" field_position="2" db_name="procsync_db1">
+            SELECT id, text FROM origin WHERE id = %s
+        </origin>
+        <destinations>
+            <destination connection_name="procsync_connection_problem" field_position="0" stop_on_error="false">
+            SELECT 'WILL NOT MAKE THE SELECT DUE PROBLEM OF CONNECTION'
+            </destination>
+            <destination connection_name="procsync_connection" field_position="0">
+            INSERT INTO procsync_db2.destination1
+                (id, text)
+            SELECT id, text
+              FROM procsync_db1.origin
+             WHERE id = %s
+            </destination>
+        </destinations>
+    </action>
+    <action name="ModuleSuccess">
+        <destinations>
+            <destination connection_name="python_module" module="test_module" class="TestModule" method="with_success"></destination>
+        </destinations>
+    </action>
+    <action name="ModuleErrorRetryWithoutRetry">
+        <destinations>
+            <destination connection_name="python_module" module="test_module" class="TestModule" method="error_with_retry"></destination>
+        </destinations>
+    </action>
+    <action name="ModuleErrorRetry" retry="2" reprocess_time="1">
+        <destinations>
+            <destination connection_name="python_module" module="test_module" class="TestModule" method="error_with_retry"></destination>
+        </destinations>
+    </action>
+    <action name="ModuleError" retry="2" reprocess_time="1">
+        <destinations>
+            <destination connection_name="python_module" module="test_module" class="TestModule" method="with_error"></destination>
+        </destinations>
+    </action>   
+</root>
+
