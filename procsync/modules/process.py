@@ -30,17 +30,16 @@ class ProcessManager():
             connection = self.get_connection(connection_name)
             # Check if necessary reconnect.
             if connection_name in self.wait_reconnect.keys():
-                if self.wait_reconnect[connection_name][0] > datetime.now():
+                if self.wait_reconnect[connection_name] > datetime.now():
                     if connection.reconnect():
                         del self.wait_reconnect[connection_name]
                     else:
-                        self.wait_reconnect[connection_name][0] = datetime.now() + timedelta(0, getattr(connection, "retry_sleep", settings.RETRY_SLEEP))
-                        return (None, settings.SYSTEM_ERROR, self.wait_reconnect[connection_name][1])
+                        self.wait_reconnect[connection_name] = datetime.now() + timedelta(0, getattr(connection, "retry_sleep", settings.RETRY_SLEEP))
+                        return (None, settings.SYSTEM_ERROR, "Reconnect fail!")
             result = connection.run(process, action_value)
-            # Check if the result is not success and ne to be reprocess
-            if result[1] != 0 and getattr(connection, "is_necessary_reprocess", False):
-                self.wait_reconnect[connection_name] = [datetime.now() + timedelta(0, getattr(connection, "retry_sleep", settings.RETRY_SLEEP)), result[2]]
-                return (None, settings.SYSTEM_ERROR, result[2])
+            # Check if need reconnect
+            if connection.is_necessary_reprocess:
+                self.wait_reconnect[connection_name] = datetime.now() + timedelta(0, getattr(connection, "retry_sleep", settings.RETRY_SLEEP))
             return result
         except Exception, e:
             return (None, settings.SYSTEM_ERROR, e)

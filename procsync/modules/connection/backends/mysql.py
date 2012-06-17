@@ -9,7 +9,7 @@ filterwarnings("ignore", "No data .*")
 try:
     import MySQLdb
 except:
-    log.exception("The application need the module mysqldb to run.\nSee: http://sourceforge.net/projects/mysql-python/")
+    log.critical("The application need the module mysqldb to run.\nSee: http://sourceforge.net/projects/mysql-python/")
     exit(1)
 
 def check_arguments(file_config, connection_key):
@@ -53,6 +53,7 @@ class Manager():
         try:
             self.connect(force_connect=True)
             self.connection.ping()
+            self.is_necessary_reprocess = False
             return True
         except:
             return False
@@ -122,9 +123,11 @@ class Manager():
                 result = (result["affected_rows"], result["insert_id"])
             return (result, 0, "Success!")
         except OperationalError, oe:
-            # Range 2000~2999 used to client error codes
-            self.is_necessary_reprocess = oe[0] > 1999 and oe[0] < 3000
-            return (None, settings.SYSTEM_ERROR if self.is_necessary_reprocess else settings.ACTION_ERROR, "Problem when executed the row [%s]!" % oe[1])
+            # Range >999 used to client error codes
+            # 1205, 1213 - lock tables (Valid only to MySQL 5.5+)
+            # 2002, 2006, 2010, 2011, 2013, 2015, 2026, 2055 - Connection  
+            self.is_necessary_reprocess = oe[0] > 9999 or (oe[0] in [1205, 1213, 2002, 2006, 2010, 2011, 2013, 2015, 2026, 2055])
+            return (None, settings.ACTION_ERROR if self.is_necessary_reprocess else settings.SYSTEM_ERROR, "Problem when executed the row [%s]!" % oe[1])
         except Exception, e:
             return (None, settings.ACTION_ERROR, "Problem when executed the row [%s]!" % e)
 

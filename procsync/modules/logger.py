@@ -82,7 +82,7 @@ def error(message, *args, **kwargs):
     report(__instance.error, message, is_info=False, *args, **kwargs)
 
 def critical(message, *args, **kwargs):
-    report(__instance.critical, message, is_info=False, *args, **kwargs)
+    report(__instance.critical, message, is_info=False, is_exception=__instance_verbose > 1, *args, **kwargs)
 
 def exception(message, *args, **kwargs):
     report(__instance.exception, message, is_info=False, is_exception=True, *args, **kwargs)

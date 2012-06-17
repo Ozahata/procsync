@@ -48,7 +48,7 @@ class ThreadManager:
                     break
                 sleep(settings.MANAGER_SLEEP)
             except:
-                log.exception("Problem while monitoring the threads.")
+                log.critical("Problem while monitoring the threads.")
 
     def finish(self, *args, **kwargs):
         """

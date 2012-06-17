@@ -89,10 +89,10 @@ class Manager():
         return (None, 1, "Was not implemented yet!")
 -----------------------------------
 
-Stating by the init, we have two necessary variables:
+Starting by the init, we have two necessary variables:
 
 - is_necessary_reprocess - Used in case had a error when try call the method run and need make other operation
-   before call the method again. (Default: False)
+   before call the method again, in this case will call the reconnect method. (Default: False)
 - retry_sleep - In case the is_necessary_reprocess is true, the process will sleep this time and when wake up
    will call the method reconnect (Used in seconds, default is the retry_sleep of link:README.html#Application-Anchor[application config].).
    

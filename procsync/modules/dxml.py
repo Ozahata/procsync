@@ -32,47 +32,50 @@ class ActionDict(dict):
         dict.__init__(self, *args, **kwargs)
         if not exists(file_name):
             raise StandardError("The file that contain the action list [%s] was not created" % file_name)
-        request = XMLParserToDict(file_name)
-        # For the first tags
-        for item in request:
-            # Don't accept if don't have name of the action
-            name = format_value(item["attrib"], "name", None)
-            if name is None: continue
-            if item["tag"] == "action":
-                self._action_parse(name, item)
-                # Check if have a less one destination
-                if len(self[name]["destination_list"]) < 1:
-                    raise StandardError("The action [%s] need have a less one destination." % name)
-                # Check if request to duplicate the action
-                duplicate = format_value(item["attrib"], "duplicate", "")
-                if len(duplicate) > 0:
-                    # Check the necessary quantity information that need be set
-                    # The number 1 means the action name
-                    qtd = 1 + (0 if self[name]["origin"] is None else 1)
-                    dest_qtd = len(self[name]["destination_list"])
-                    # First split the list of actions
-                    action_list = duplicate.split(";")
-                    for action in action_list:
-                        if len(action) < 1: continue
-                        attr = action.split(",")
-                        if attr[0] == "": raise StandardError("The duplicate name in action [%s] is necessary declarate." % name)
-                        if len(attr) != qtd + dest_qtd:
-                            raise StandardError("The duplicate [%s] in action [%s] have incomplete information." % (attr[0], name,))
-                        # Clone the dictionary
-                        clone = deepcopy(self[name])
-                        clone.pop("duplicate")
-                        # Change the name
-                        clone["name"] = attr[0]
-                        if self[name]["origin"] is not None and attr[1] != "":
-                            clone["origin"]["connection_name"] = attr[1]
-                        for position in range(len(clone["destination_list"])):
-                            if attr[qtd + position] != "":
-                                clone["destination_list"][position]["connection_name"] = attr[qtd + position]
-                        self[clone["name"]] = clone
-                    # Remove the duplicate
-                    item["attrib"].pop("duplicate")
-            if item["tag"] == "replicate":
-                self._replication_parse(name, item)
+        try:
+            request = XMLParserToDict(file_name)
+            # For the first tags
+            for item in request:
+                # Don't accept if don't have name of the action
+                name = format_value(item["attrib"], "name", None)
+                if name is None: continue
+                if item["tag"] == "action":
+                    self._action_parse(name, item)
+                    # Check if have a less one destination
+                    if len(self[name]["destination_list"]) < 1:
+                        raise StandardError("The action [%s] need have a less one destination." % name)
+                    # Check if request to duplicate the action
+                    duplicate = format_value(item["attrib"], "duplicate", "")
+                    if len(duplicate) > 0:
+                        # Check the necessary quantity information that need be set
+                        # The number 1 means the action name
+                        qtd = 1 + (0 if self[name]["origin"] is None else 1)
+                        dest_qtd = len(self[name]["destination_list"])
+                        # First split the list of actions
+                        action_list = duplicate.split(";")
+                        for action in action_list:
+                            if len(action) < 1: continue
+                            attr = action.split(",")
+                            if attr[0] == "": raise StandardError("The duplicate name in action [%s] is necessary declarate." % name)
+                            if len(attr) != qtd + dest_qtd:
+                                raise StandardError("The duplicate [%s] in action [%s] have incomplete information." % (attr[0], name,))
+                            # Clone the dictionary
+                            clone = deepcopy(self[name])
+                            clone.pop("duplicate")
+                            # Change the name
+                            clone["name"] = attr[0]
+                            if self[name]["origin"] is not None and attr[1] != "":
+                                clone["origin"]["connection_name"] = attr[1]
+                            for position in range(len(clone["destination_list"])):
+                                if attr[qtd + position] != "":
+                                    clone["destination_list"][position]["connection_name"] = attr[qtd + position]
+                            self[clone["name"]] = clone
+                        # Remove the duplicate
+                        item["attrib"].pop("duplicate")
+                if item["tag"] == "replicate":
+                    self._replication_parse(name, item)
+        except Exception, e:
+            raise StandardError("The file [%s] was malformed: [%s] " % (file_name, e))
 
     def _replication_parse(self, name, element):
         attrib = element["attrib"]

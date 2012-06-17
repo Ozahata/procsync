@@ -3,6 +3,7 @@ from procsync.modules import settings, logger as log
 from _mysql_exceptions import OperationalError
 from procsync.modules.tools import format_value
 from procsync.modules.process import ProcessManager
+from time import sleep
 
 def check_arguments(file_config, thread_key):
     """
@@ -99,6 +100,8 @@ class Manager(Thread):
                             if update_param is not None:
                                 self.update_request(*update_param)
                         elif action["tag"] == 'action':
+                            main_message = "[%s/%s] - " % (self.name, action_name)
+                            log.info("%s Processing: %s" % (main_message, str(row)), verbose=1)
                             # Check if have origin exist other else use the same information of have_request
                             origin = format_value(action, "origin", default_value=None)
                             if origin is None:
@@ -107,44 +110,47 @@ class Manager(Thread):
                             else:
                                 origin, result_code, error_message = process.execute(origin, row)
                                 if result_code != 0:
-                                    self.update_request(action_name, row[PROCESS_ID], result_code, error_message, action["retry"], action["reprocess_time"])
+                                    self.update_request(action_name, row[PROCESS_ID], result_code, "Origin - %s" % (error_message,), action["retry"], action["reprocess_time"])
                                     continue
-                            log.info("Thread [%s], processing action [%s] - Value: [%s] - Origin Result [%s]" % (self.name, action_name, str(row), str(origin)), verbose=1)
+                                log.info("%s Retrieve origin: %s" % (main_message, str(origin)), verbose=1)
                             have_error = False
                             # each row that return need run in destination
                             for origin_row in origin:
                                 # In case a list of error, will store the error in case of the stop_on_error = False
                                 error_result = None
-                                for destination_item in format_value(action, "destination_list", default_value=[]):
+                                for pos, destination_item in enumerate(format_value(action, "destination_list", default_value=[])):
+                                    log.info("%s Process destination: %s" % (main_message, str(pos + 1)), verbose=2)
                                     _, result_code, error_message = process.execute(destination_item, origin_row)
                                     if result_code != 0:
+                                        return_error_message = "%s Process destination: %s - %s" % (main_message, str(pos + 1), error_message)
                                         have_error = True
                                         if destination_item["stop_on_error"]:
-                                            self.update_request(action_name, row[PROCESS_ID], result_code, error_message, action["retry"], action["reprocess_time"])
+                                            self.update_request(action_name, row[PROCESS_ID], result_code, return_error_message, action["retry"], action["reprocess_time"])
                                             break
                                         else:
-                                            error_result = [ result_code, error_message ]
+                                            error_result = [ result_code, return_error_message ]
                                 if error_result:
                                     have_error = True
                                     self.update_request(action_name, row[PROCESS_ID], error_result[0], error_result[1], action["retry"], action["reprocess_time"])
                             if not have_error:
                                 self.update_request(action_name, row[PROCESS_ID], settings.PROCESS_SUCCESS, "", action["retry"], action["reprocess_time"])
+                            log.info("%s Finished%s!" % (main_message, " with error" if have_error else ""), verbose=1)
                         else:
                             self.update_request(action_name, row[PROCESS_ID], settings.CONFIG_ERROR, "Tag [%s] of [%s] not exist!" % (action["tag"], action_name), action["retry"], action["reprocess_time"])
                 except OperationalError, oe:
                     if oe[0] in self.CONFIG_MYSQL_ERROR: raise oe
-                    log.warning("Error with thread [%s], connection [%s] - [%s], try reconnect." % (self.name, self.connection_name, oe))
+                    log.warning("[%s/%s] - [%s], try reconnect." % (self.name, self.connection_name, oe))
                     while not self.__stop_event.isSet():
                         try:
                             self.__stop_event.wait(settings.RETRY_SLEEP)
                             self.manager.reconnect()
                             # if don't have error, will be able to back to the process
-                            log.warning("Thread [%s], connection [%s] reestablished" % (self.name, self.connection_name))
+                            log.warning("[%s/%s] reestablished" % (self.name, self.connection_name))
                             break
                         except Exception:
-                            log.warning("Still have a error in thread [%s], connection [%s] - Retry after %s seconds" % (self.name, self.connection_name, settings.RETRY_SLEEP))
+                            log.warning("Still have a error in [%s/%s] - Retry after %s seconds" % (self.name, self.connection_name, settings.RETRY_SLEEP))
         except:
-            log.exception("Problem while ran the instance thread [%s]." % self.name)
+            log.critical("Problem while ran the instance thread [%s]." % self.name)
 
     def join(self, timeout=None):
         """
@@ -162,18 +168,33 @@ class Manager(Thread):
         result = self.manager.execute_sp(self.attrib["sp_search_row"], *args)
         return None if len(result) == 0 else result
 
-    def update_request(self, action_name, queue_id, status, message, retry, reprocess_time):
+    def update_request(self, action_name, queue_id, status, message, retry, reprocess_time, retry_update=0):
         """
         Check if have some request in the queue
+        retry_update is internal use.
         """
         args = [ queue_id, status, message, retry, reprocess_time ]
+        result = None
         try:
             if status != 0:
-                log.warning("Thread [%s], processing action [%s] - ID: [%s] - Status [%s] - Message [%s]" % (self.name, action_name, queue_id, status, message), verbose=1)
+                log.warning("[%s/%s] - ID: [%s] - Status [%s] - Message [%s]" % (self.name, action_name, queue_id, status, message), verbose=1)
             result = self.manager.execute_sp(self.attrib["sp_update_row"], details=True, *args)
+        except OperationalError, oe:
+            # Deadlock found when trying to get lock; try restarting transaction
+            if oe[0] == 1213:
+                if retry_update < 5:
+                    # Sleep to give the time to unlock
+                    sleep(0.5)
+                    retry_update += 1
+                    log.warning("Deadlock found, retrying [%s/5]" % retry_update)
+                    return self.update_request(action_name, queue_id, status, message, retry, reprocess_time, retry_update)
+                else:
+                    log.critical("Was not possible to update the information, please check the process.")
+            else:
+                log.critical("An operation error occurred: %s" % str(oe))
         except:
-            log.exception("Was not possible to record the status [%s] - [%s] in the row [%s]." % (status, message, queue_id))
-        return None if len(result) == 0 else result
+            log.critical("Was not possible to record the status [%s] - [%s] in the row [%s]." % (status, message, queue_id))
+        return None if result is None or len(result) == 0 else result
 
     def replicate_request(self, action, *args):
         """

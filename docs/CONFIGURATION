@@ -231,14 +231,6 @@ string need be a numeric value separate by "," in order that need be pass to
 origin. If not set will considered all the result.
 | Destinations |                 | Y/N |         | Obligatory if have more then 
 one destination.                                       
-| Destinations | connection_name |  N  |  mysql  | 
-
-Name the connection that will search in the connection file, declared in 
-<<Connection-Anchor, connection config>>. +
-In destination, you can execute the same information to many connections 
-separating by ",". +
-If one fail, will put to re-process but still run the others connections. +
-In the connection will contain the way that the request the information.
        
 | Destinations | stop_on_error   |  Y  |  True   | 
 
@@ -248,6 +240,15 @@ later.
  
 | Destination 4+| The tag is obligatory and if have multiple destinations is 
 necessary the parent be a tag named Destinations.          
+| Destination | connection_name |  N  |  mysql  | 
+
+Name the connection that will search in the connection file, declared in 
+<<Connection-Anchor, connection config>>. +
+In destination, you can execute the same information to many connections 
+separating by ",". +
+If one fail, will put to re-process but still run the others connections. +
+In the connection will contain the way that the request the information.
+
 | Destination  | stop_on_error   |  Y  |  True   | Like the same in Destinations 
 tag, this will specify the behaver that is opposite of set on stop_on_error in 
 Destinations tag.                                        
@@ -292,12 +293,25 @@ For the result will return a tuple with affected_rows and insert_id. +
 * “sp” - Execute like stored procedure.                         
 * “sp_update” - Execute like stored procedure but update something. +
 For the result will return a tuple with affected_rows and insert_id.                         
+| Origin/Destination | db_name        |  Y  |         |Database to use. 
 
 |=========================================
 
 *NOTE*: When the query was executed and don't return rows, normally will show a
 warning (No data - zero rows fetched, selected, or processed), this message is
 suppress and can see only when the log level is debug.
+
+===== Additional Note
+
+* If you use a delete or update in the origin or destination, even if not update
+/delete a row, will process with success. If is necessary make this validation,
+you need implement inside a stored procedure.
+* Reprocess will occurs only in case of deadlock or lock of table.
+* Retry will work when use a 
+link:http://dev.mysql.com/doc/en/signal.html[SIGNAL > 9999 (MySQL 5.5+)] or when
+have deadlock or lock, code (1205, 1213) check the
+link:http://dev.mysql.com/doc/en/error-messages-server.html[MySQL page].
+* 
 
 ==== Python Backends
 [options="header,autowidth",cols="^,<,^,^,asciidoc"]
