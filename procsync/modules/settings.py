@@ -4,7 +4,7 @@ from procsync.modules.configuration import ThreadConfig, ConnectionConfig
 from os import getcwd
 from os.path import join
 
-PROCESS_SUCCESS, CONFIG_ERROR, ACTION_ERROR, SYSTEM_ERROR = range(4)
+PROCESS_SUCCESS, CONFIG_ERROR, ACTION_ERROR, SYSTEM_ERROR, CONNECTION_ERROR = range(5)
 
 APP_CONFIG = Config()
 

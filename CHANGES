@@ -32,4 +32,7 @@ v0.8.1, 2012-06-18 - Thread MySQL (Retry when have problem with Deadlock in
                      intuitive.
                    - Change to start in foreground, now you need set the 
                      parameter "-f" to put in background.  
- 
+v0.8.2, 2012-06-20 - Connection of MySQL can be configure to make a action
+                     before expire the wait_timeout.
+                   - Change to critical show exception/stack trace in case the 
+                     verbose>1. 

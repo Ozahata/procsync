@@ -56,7 +56,10 @@ def report(log_methods, message, is_exception=False, is_info=True, *args, **kwar
             message_list.extend(split_len(message, 1024))
         for item in message_list:
             if verbose <= __instance_verbose:
-                log_methods(item, *args)
+                if is_exception:
+                    __instance.exception(item, *args)
+                else:
+                    log_methods(item, *args)
             if not is_info:
                 print >> stderr, item
                 exc_type, exc_value, exc_traceback = exc_info()

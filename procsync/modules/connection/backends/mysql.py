@@ -1,5 +1,6 @@
 from _mysql_exceptions import OperationalError
 from contextlib import closing
+from datetime import datetime, timedelta
 from getpass import getuser
 from procsync.modules import settings, logger as log
 from procsync.modules.tools import format_value
@@ -26,6 +27,7 @@ def check_arguments(file_config, connection_key):
             "unix_socket" : file_config.get_config_value(connection_key, "unix_socket", default_value=settings.MYSQL_UNIX_SOCKET),
             "connect_timeout" : file_config.get_config_value(connection_key, "connect_timeout", default_value=None, return_type=int),
             "persistent" : file_config.get_config_value(connection_key, "persistent", default_value=False),
+            "wait_timeout" : file_config.get_config_value(connection_key, "wait_timeout", default_value=28800),
             "retry_sleep" : file_config.get_config_value(connection_key, "retry_sleep", default_value=settings.RETRY_SLEEP),
             }
 
@@ -36,9 +38,20 @@ class Manager():
         self.connection = None
         self.is_persistent = kwargs["persistent"]
         self.is_necessary_reprocess = False
+        # Subtract 5 seconds to have time to ping again and avoid disconnection
+        # Of course if call before the time expire. 
+        self.wait_timeout = kwargs["wait_timeout"] - 5
+        self.connect_time = datetime.now() + timedelta(0, self.wait_timeout)
         self.retry_sleep = kwargs["retry_sleep"]
 
     def connect(self, force_connect=False):
+        if self.is_persistent and self.connect_time < datetime.now():
+            try:
+                self.connection.ping()
+                # Used to wait_timeout if is_persistent
+                self.connect_time = datetime.now() + timedelta(0, self.wait_timeout)
+            except:
+                force_connect = True
         if self.connection is None or self.connection.open == 0 or force_connect:
             self.connection = MySQLdb.connect(**self.attrib)
             # The MySQLdb set the auto commit to 0, we need change 
@@ -53,6 +66,8 @@ class Manager():
         try:
             self.connect(force_connect=True)
             self.connection.ping()
+            # Used to wait_timeout if is_persistent
+            self.connect_time = datetime.now() + timedelta(0, self.wait_timeout)
             self.is_necessary_reprocess = False
             return True
         except:
@@ -77,6 +92,8 @@ class Manager():
                               }
                 else:
                     result = cursor.fetchall()
+            # Used to wait_timeout if is_persistent
+            self.connect_time = datetime.now() + timedelta(0, self.wait_timeout)
             # Log the warning information
             for item in connection.show_warnings():
                 # 1329L, 'No data - zero rows fetched, selected, or processed'
@@ -86,8 +103,8 @@ class Manager():
                     log.warning("%s - %s" % (item[1], item[2]))
             return result
         except OperationalError, oe:
-            # Range 2000~2999 used to client error codes
-            self.is_necessary_reprocess = oe[0] > 1999 and oe[0] < 3000
+            # Range >999 used to client error codes
+            self.is_necessary_reprocess = oe[0] > 9999
             raise oe
         except Exception, e:
             raise e
@@ -125,9 +142,11 @@ class Manager():
         except OperationalError, oe:
             # Range >999 used to client error codes
             # 1205, 1213 - lock tables (Valid only to MySQL 5.5+)
-            # 2002, 2006, 2010, 2011, 2013, 2015, 2026, 2055 - Connection  
-            self.is_necessary_reprocess = oe[0] > 9999 or (oe[0] in [1205, 1213, 2002, 2006, 2010, 2011, 2013, 2015, 2026, 2055])
-            return (None, settings.ACTION_ERROR if self.is_necessary_reprocess else settings.SYSTEM_ERROR, "Problem when executed the row [%s]!" % oe[1])
+            # 2002, 2006, 2010, 2011, 2013, 2015, 2026, 2055 - Connection 
+            is_connection_problem = (oe[0] in [1205, 1213, 2002, 2006, 2010, 2011, 2013, 2015, 2026, 2055])
+            is_user_problem = oe[0] > 9999
+            self.is_necessary_reprocess = is_user_problem or is_connection_problem
+            return (None, settings.ACTION_ERROR if is_user_problem else settings.CONNECTION_ERROR if is_connection_problem else settings.SYSTEM_ERROR, "Problem when executed the row [%s]!" % oe[1])
         except Exception, e:
             return (None, settings.ACTION_ERROR, "Problem when executed the row [%s]!" % e)
 
