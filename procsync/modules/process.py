@@ -34,8 +34,10 @@ class ProcessManager():
                     if connection.reconnect():
                         del self.wait_reconnect[connection_name]
                     else:
+                        import procsync.modules.logger as log
+                        log.info(str(action_value))
                         self.wait_reconnect[connection_name] = datetime.now() + timedelta(0, getattr(connection, "retry_sleep", settings.RETRY_SLEEP))
-                        return (None, settings.SYSTEM_ERROR, "Reconnect fail!")
+                        return (None, settings.CONNECTION_ERROR, "Reconnect fail!")
             result = connection.run(process, action_value)
             # Check if need reconnect
             if connection.is_necessary_reprocess:
