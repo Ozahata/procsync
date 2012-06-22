@@ -1,6 +1,7 @@
 from procsync.modules.tools import Config
 from os.path import exists
 from procsync.modules.dxml import ActionDict
+from copy import copy
 
 class ThreadConfig():
 
@@ -27,7 +28,8 @@ class ThreadConfig():
         Due the module.settings can't be imported (circular reference) we need call after from a method.
         """
         from procsync.modules import settings
-        for item in self.run_list:
+        load_thread_list = list(self.run_list)
+        for item in load_thread_list:
             # Load the backends to run the process
             backends = self.file_config.get_config_value(item, "backend", default_value="procsync.modules.thread.backends.mysql")
             try:
@@ -46,6 +48,13 @@ class ThreadConfig():
             action_file = self.file_config.get_config_value(item, "action_file", default_value=None, empty_become_none=True)
             attrib["action_file"] = settings.ACTION_DICT if action_file is None else ActionDict(action_file)
             self.thread_list[item] = attrib
+            # Replicate if necessary
+            replicate = self.file_config.get_config_value(item, "replicate", default_value=0, empty_become_none=True)
+            if replicate > 0:
+                for thread_item in range(replicate):
+                    thread_name = item + ("_%s" % (thread_item + 1,))
+                    self.thread_list[thread_name] = copy(attrib)
+                    self.run_list.append(thread_name)
 
     def get_thread_list(self):
         return self.run_list

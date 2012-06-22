@@ -1242,7 +1242,7 @@ application_name.</p></td>
 <td align="center" valign="top"><p class="table">N</p></td>
 <td align="center" valign="top"><p class="table"></p></td>
 <td align="left" valign="top"><p class="table">He will define how type of manager will be used to make the connection.<br />
-The default connection is modules.connection.backends.mysql.<br />
+The default connection is procsync.modules.connection.backends.mysql.<br />
 Check the additional attributes in <a href="#Connection-Settings">settings</a>.</p></td>
 </tr>
 </tbody>
@@ -1258,7 +1258,7 @@ is created with auto commit.</p></div>
 <table rules="all"
 frame="border"
 cellspacing="0" cellpadding="4">
-<caption class="title">Table 4. modules.connection.backends.mysql</caption>
+<caption class="title">Table 4. procsync.modules.connection.backends.mysql</caption>
 <col />
 <col />
 <col />
@@ -1324,7 +1324,7 @@ within given number of seconds.</p></td>
 <td align="center" valign="top"><p class="table">Y</p></td>
 <td align="center" valign="top"><p class="table">False</p></td>
 <td align="left" valign="top"><p class="table">If true will create a persistent
-connection instead each call open a connection and close.</p></td>
+connection instead each call open a connection and close. *</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table">wait_timeout</p></td>
@@ -1338,12 +1338,22 @@ row to error.</p></td>
 </tbody>
 </table>
 </div>
+<div class="ulist"><ul>
+<li>
+<p>
+By default when the connection start, the autocommit is setting to 1, but
+if some part will set with 0 the connection will remain with this setting and
+for some reason the programmer forget to commit or rollback will affect others
+actions.
+</p>
+</li>
+</ul></div>
 <h4 id="_python">4.1.2. Python</h4>
 <div class="tableblock">
 <table rules="all"
 frame="border"
 cellspacing="0" cellpadding="4">
-<caption class="title">Table 5. modules.connection.backends.python</caption>
+<caption class="title">Table 5. procsync.modules.connection.backends.python</caption>
 <col />
 <col />
 <col />
@@ -1416,10 +1426,10 @@ application_name.</p></td>
 <tr>
 <td align="center" valign="top"><p class="table">application_name</p></td>
 <td align="left" valign="top"><p class="table">backend</p></td>
-<td align="center" valign="top"><p class="table">N</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
 <td align="center" valign="top"><p class="table"></p></td>
 <td align="left" valign="top"><p class="table">He will define how type of manager will be used to run in the thread.<br />
-The default thread is modules.thread.backends.mysql.<br />
+The default thread is procsync.modules.thread.backends.mysql.<br />
 Check the additional attributes in <a href="#Thread-Settings">settings</a>.</p></td>
 </tr>
 <tr>
@@ -1458,6 +1468,16 @@ be execute.</p></td>
 <td align="left" valign="top"><p class="table">In case the thread need
 other <a href="#Action-Anchor">action file</a> to use instead the default.</p></td>
 </tr>
+<tr>
+<td align="center" valign="top"><p class="table">application_name</p></td>
+<td align="left" valign="top"><p class="table">replicate</p></td>
+<td align="center" valign="top"><p class="table">Y</p></td>
+<td align="center" valign="top"><p class="table">0</p></td>
+<td align="left" valign="top"><p class="table">Get the thread declared
+and replicate n times more, adding the number after application_name.
+In case of this thread are setting in run_list and have the replicate attribute,
+this threads will load automatic, don&#8217;t need set in run_list.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -1469,7 +1489,7 @@ thread.conf, checking the list below</p></div>
 <table rules="all"
 frame="border"
 cellspacing="0" cellpadding="4">
-<caption class="title">Table 7. modules.thread.backends.mysql</caption>
+<caption class="title">Table 7. procsync.modules.thread.backends.mysql</caption>
 <col />
 <col />
 <col />
@@ -1483,6 +1503,13 @@ cellspacing="0" cellpadding="4">
 </tr>
 </thead>
 <tbody>
+<tr>
+<td align="left" valign="top"><p class="table">connection_name</p></td>
+<td align="center" valign="top"><p class="table">N</p></td>
+<td align="center" valign="top"><p class="table"></p></td>
+<td align="left" valign="top"><p class="table">Name of connection that
+will use request the stored procedure.</p></td>
+</tr>
 <tr>
 <td align="left" valign="top"><p class="table">sp_search_row</p></td>
 <td align="center" valign="top"><p class="table">Y</p></td>
@@ -1655,7 +1682,7 @@ http://www.lorenzobettini.it
 http://www.gnu.org/software/src-highlite -->
 <pre><tt><span style="font-weight: bold"><span style="color: #0000FF">def</span></span> <span style="font-weight: bold"><span style="color: #000000">check_arguments</span></span><span style="color: #990000">(</span>file_config<span style="color: #990000">,</span> thread_key<span style="color: #990000">):</span>
 <span style="font-style: italic"><span style="color: #9A1900">    """</span></span>
-<span style="font-style: italic"><span style="color: #9A1900">    Used in the modules.thread.manager to identify how attributes will be</span></span>
+<span style="font-style: italic"><span style="color: #9A1900">    Used in the procsync.modules.thread.manager to identify how attributes will be</span></span>
 <span style="font-style: italic"><span style="color: #9A1900">    necessary for this module</span></span>
 <span style="font-style: italic"><span style="color: #9A1900">    """</span></span>
     attribute_necessary <span style="color: #990000">=</span> file_config<span style="color: #990000">.</span><span style="font-weight: bold"><span style="color: #000000">get_config_value</span></span><span style="color: #990000">(</span>thread_key<span style="color: #990000">,</span> <span style="color: #990000">\</span>
@@ -1684,7 +1711,7 @@ but is possible to change to RotatingFileHandler.</p></div>
 <div id="footer">
 <div id="footer-text">
 Version 0.1<br />
-Last updated 2012-06-19 15:04:30 JST
+Last updated 2012-06-22 13:17:32 JST
 </div>
 </div>
 </body>

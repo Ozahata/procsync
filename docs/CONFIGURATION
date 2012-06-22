@@ -150,6 +150,7 @@ By default, the file grows indefinitely.
 normal information.
 
 For now we have only level 1 that will write the result of the origin.
+
 |=========================================
 
 [[Action-Anchor]]
@@ -350,7 +351,7 @@ application_name.
 | application_name   | backend         |  N  |         | 
 
 He will define how type of manager will be used to make the connection. +           
-The default connection is modules.connection.backends.mysql. +                       
+The default connection is procsync.modules.connection.backends.mysql. +                       
 Check the additional attributes in <<Connection-Settings,settings>>.                                                    
 
 |=========================================
@@ -365,7 +366,7 @@ connection.conf, checking the list below.
 This backend is used to execute commands in mysql. For default all connections 
 is created with auto commit.
 
-.modules.connection.backends.mysql
+.procsync.modules.connection.backends.mysql
 [options="header,autowidth",cols="<,^,^,<"]
 |=========================================
 | Attribute       | Opt | Default          | Description
@@ -382,16 +383,21 @@ Default: use default location or TCP for remote hosts.
 | connect_timeout |  Y  |                  | Abort if connect is not completed 
 within given number of seconds.
 | persistent      |  Y  | False            | If true will create a persistent 
-connection instead each call open a connection and close.
+connection instead each call open a connection and close. *
 | wait_timeout    |  Y  | 28800            | This will use when persistent is
 True to check if the MySQL close the connection. The number need be the same
 that set in the MySQL. This will avoid to get a error of connection and put the
 row to error.
 |=========================================
 
+* By default when the connection start, the autocommit is setting to 1, but
+if some part will set with 0 the connection will remain with this setting and
+for some reason the programmer forget to commit or rollback will affect others
+actions. 
+
 ==== Python
 
-.modules.connection.backends.python
+.procsync.modules.connection.backends.python
 [options="header,autowidth",cols="<,^,^,<"]
 |=========================================
 | Attribute       | Opt | Default          | Description
@@ -429,10 +435,10 @@ In case this information will not set, will search for all application_name.
     
 | application_name 4+| Each thread need a unique name that represented by 
 application_name.       
-| application_name | backend         |  N  |         | 
+| application_name | backend         |  Y  |         | 
 
 He will define how type of manager will be used to run in the thread. +           
-The default thread is modules.thread.backends.mysql. +                       
+The default thread is procsync.modules.thread.backends.mysql. +                       
 Check the additional attributes in <<Thread-Settings,settings>>.                                                    
 
 | application_name | complement      |  Y  |         | 
@@ -449,7 +455,12 @@ request come, this sleep will be reset.
 the maximum time that the thread can sleep until check if have other process to 
 be execute.                                   
 | application_name | action_file     |  Y  |         | In case the thread need 
-other <<Action-Anchor, action file>> to use instead the default.           
+other <<Action-Anchor, action file>> to use instead the default.
+| application_name | replicate       |  Y  |    0    | Get the thread declared
+and replicate n times more, adding the number after application_name.
+In case of this thread are setting in run_list and have the replicate attribute,
+this threads will load automatic, don't need set in run_list. 
+          
 |=========================================
 
 [[Thread-Settings]]
@@ -460,10 +471,12 @@ thread.conf, checking the list below
 
 ==== MySQL
 
-.modules.thread.backends.mysql
+.procsync.modules.thread.backends.mysql
 [options="header,autowidth",cols="<,^,^,<"]
 |=========================================
 | Attribute        | Opt | Default               | Description
+| connection_name  |  N  |                       | Name of connection that 
+will use request the stored procedure. 
 | sp_search_row    |  Y  | ps_search_request    | Search in the table to see if 
 have some row to process (For each row returned will be run a process in order).
 | sp_update_row    |  Y  | ps_update_request    | Update the table related with 
@@ -574,7 +587,7 @@ below:
 ---------------------------------------------------------------------
 def check_arguments(file_config, thread_key):
     """
-    Used in the modules.thread.manager to identify how attributes will be 
+    Used in the procsync.modules.thread.manager to identify how attributes will be 
     necessary for this module
     """
     attribute_necessary = file_config.get_config_value(thread_key, \ 

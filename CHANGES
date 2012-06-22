@@ -36,3 +36,6 @@ v0.8.2, 2012-06-20 - Connection of MySQL can be configure to make a action
                      before expire the wait_timeout.
                    - Change to critical show exception/stack trace in case the 
                      verbose>1. 
+v0.8.3, 2012-06-22 - Adding a "replicate" attribute in the thread configuration
+                     to multiply the thread and avoid duplication.
+                     
