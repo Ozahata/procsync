@@ -4,6 +4,7 @@ from procsync.modules.dxml import ActionDict
 from copy import copy
 
 class ThreadConfig():
+    DEFAULT_START_INSTANCE = 1
 
     def __init__(self, file_name):
         self.file_name = file_name
@@ -11,21 +12,13 @@ class ThreadConfig():
             raise StandardError("The file that contain the action list [%s] was not created" % file_name)
         self.file_config = Config(file_name=file_name)
         # Initialize thread list (run_list)
-        self.run_list = self.file_config.get_config_value("application", "run_list", default_value=None, empty_become_none=True)
-        session_list = [ item for item in self.file_config._config.sections() if item != "application" ]
-        if self.run_list is None:
-            self.run_list = session_list
-        else:
-            self.run_list = [ item.strip() for item in self.run_list.split(",") if item.strip() != "" ]
-            # alert for wrong thread
-            for item in self.run_list:
-                if item not in session_list: raise ValueError("The item in the run_list [%s] not exist in the thread file session" % item)
+        self.run_list = [ item for item in self.file_config._config.sections() if self.file_config.get_config_value(item, "instances", default_value=self.DEFAULT_START_INSTANCE, empty_become_none=True) > 0 ]
         # Prepare to load the thread(s)
         self.thread_list = {}
 
     def _load_pool(self):
         """
-        Due the module.settings can't be imported (circular reference) we need call after from a method.
+        Due the procsync.module.settings can't be imported (circular reference) we need call after from a method.
         """
         from procsync.modules import settings
         load_thread_list = list(self.run_list)
@@ -48,11 +41,11 @@ class ThreadConfig():
             action_file = self.file_config.get_config_value(item, "action_file", default_value=None, empty_become_none=True)
             attrib["action_file"] = settings.ACTION_DICT if action_file is None else ActionDict(action_file)
             self.thread_list[item] = attrib
-            # Replicate if necessary
-            replicate = self.file_config.get_config_value(item, "replicate", default_value=0, empty_become_none=True)
-            if replicate > 0:
-                for thread_item in range(replicate):
-                    thread_name = item + ("_%s" % (thread_item + 1,))
+            # start more instances if necessary
+            instances = self.file_config.get_config_value(item, "instances", default_value=self.DEFAULT_START_INSTANCE, empty_become_none=True)
+            if instances > 1:
+                for thread_item in range(1, instances):
+                    thread_name = item + ("_%s" % (thread_item,))
                     self.thread_list[thread_name] = copy(attrib)
                     self.run_list.append(thread_name)
 

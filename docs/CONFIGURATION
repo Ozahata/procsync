@@ -176,11 +176,11 @@ The structure will be like this:
     <action ...>
         ...
     </action>
-    <replicate ... />
+    <redirect ... />
 </root>
 ---------------------------------------------------------------------
 
-Inside the root tag we will be able to have a action or replicate tag that each 
+Inside the root tag we will be able to have a action or redirect tag that each 
 one have the owns attributes that we can see below. 
 
 === Attribute settings
@@ -237,7 +237,7 @@ one destination.
 
 If one of destination have a error how the behaver that need make. +
 If False the process will run all destination and put the row to retry again 
-later.
+later. *
  
 | Destination 4+| The tag is obligatory and if have multiple destinations is 
 necessary the parent be a tag named Destinations.          
@@ -252,25 +252,25 @@ In the connection will contain the way that the request the information.
 
 | Destination  | stop_on_error   |  Y  |  True   | Like the same in Destinations 
 tag, this will specify the behaver that is opposite of set on stop_on_error in 
-Destinations tag.                                        
+Destinations tag. *                                        
 | Destination  | field_position  |  Y  |         | With the result origin/queue 
 tuple, here we can set order to be insert pass to destination, this string need 
 be a numeric value separate by "," in order that need be pass to destination. 
 If not set will considered all the result.
-| Replicate  4+| 
+| Redirect  4+| 
 
-For each parameter set in the attribute will insert one row in the queue. +                                             
-The Replicate tag need be insert in the after all request of action to make the 
-validation of names.                  
+This action will get the value of the queue and redirect to others actions to be
+process independent. This is useful when you wish update two places but don't
+wish that interfere between the actions.
 
-| Replicate    | name            |  N  |         | Name of the action that 
+| Redirect     | name            |  N  |         | Name of the action that 
 reference the field action_name in the queue.               
-| Replicate    | to              |  N  |         | Name of actions separate by 
-","                                                     
+| Redirect     | to              |  N  |         | Name of actions separate by 
+comma.                                                     
 |=========================================
 
-*NOTE*: In case of stop_on_error is False and occurs error in more than one
-destination, just the last error will be record.
+* In case of stop_on_error is False and occurs error in more than one
+destination, just the last error will be record in the queue.
 
 
 === Additional Attribute settings
@@ -428,11 +428,6 @@ with less two persistent connections.
 [options="header,autowidth",cols="^,<,^,^,<"]
 |=========================================
 | Session    | Attribute       | Opt | Default | Description
-| application      | run_list        |  Y  |         | 
-
-Contain the threads that will be execute separate by ",". +                       
-In case this information will not set, will search for all application_name.
-    
 | application_name 4+| Each thread need a unique name that represented by 
 application_name.       
 | application_name | backend         |  Y  |         | 
@@ -456,11 +451,10 @@ the maximum time that the thread can sleep until check if have other process to
 be execute.                                   
 | application_name | action_file     |  Y  |         | In case the thread need 
 other <<Action-Anchor, action file>> to use instead the default.
-| application_name | replicate       |  Y  |    0    | Get the thread declared
-and replicate n times more, adding the number after application_name.
-In case of this thread are setting in run_list and have the replicate attribute,
-this threads will load automatic, don't need set in run_list. 
-          
+| application_name | instances       |  Y  |    1    | Define how many instances
+of the thread will be create. The additional instances will add the number after
+application_name.
+If the instances set with 0, will not run the thread.          
 |=========================================
 
 [[Thread-Settings]]
@@ -481,7 +475,7 @@ will use request the stored procedure.
 have some row to process (For each row returned will be run a process in order).
 | sp_update_row    |  Y  | ps_update_request    | Update the table related with 
 the information of the thread.
-| sp_replicate_row |  Y  | ps_replicate_request | Used when wish replicate the 
+| sp_redirect_row |  Y   | ps_redirect_request  | Used when wish redirect the 
 same queue to other actions.
 | db_name          |  Y  |                       | In case the stored procedures 
 been in other database inside the connection passed.
@@ -550,22 +544,21 @@ The reprocess_time is the time that will wait between the re-process.
 |=========================================
 
 
-*sp_replicate_row* +
+*sp_redirect_row* +
 This stored procedure will insert others queue to execute the same row to other 
 actions. +
-This sp will call for each action that request to replicate due the complexity 
-of code to split 
-and insert inside the stored procedure
+This sp will call for each action that request to redirect due the complexity 
+of code to split and insert inside the stored procedure.
 
 [options="autowidth",cols="<s,<,<"]
 |=========================================
-| Input  | replicate_action, sp_search_row_result | 
+| Input  | redirect_action, sp_search_row_result | 
 
-The replicate_list contain the name of the new action that need insert. +
+The redirect_list contain the name of the new action that need insert. +
 The sp_search_row_result is the information returned by the sp that will send to 
 the sp. 
 
-| Output |   | The same quantity of item in the replicate_list (affected rows). 
+| Output |   | The same quantity of item in the redirect_list (affected rows). 
 |=========================================
 
 

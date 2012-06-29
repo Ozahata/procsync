@@ -18,7 +18,7 @@ def check_arguments(file_config, thread_key):
             "connection_name" : connection_name,
             "sp_search_row" : file_config.get_config_value(thread_key, "sp_search_row", default_value="ps_search_request"),
             "sp_update_row" : file_config.get_config_value(thread_key, "sp_update_row", default_value="ps_update_request"),
-            "sp_replicate_row" : file_config.get_config_value(thread_key, "sp_replicate_row", default_value="ps_replicate_request"),
+            "sp_redirect_row" : file_config.get_config_value(thread_key, "sp_redirect_row", default_value="ps_redirect_request"),
             "db_name" : file_config.get_config_value(thread_key, "db_name", default_value=None)
             }
 
@@ -76,14 +76,14 @@ class Manager(Thread):
                             self.update_request(action_name, row[PROCESS_ID], settings.CONFIG_ERROR, "Action [%s] not exist!" % action_name, 0, 180)
                             continue
                         # Check the function call
-                        if action["tag"] == 'replicate':
+                        if action["tag"] == 'redirect':
                             # For this event we need a transaction to guarantee the replication will make for all
                             self.manager.connection.autocommit(False)
                             # update_param will call the update_request and send in case have a error
                             update_param = None
                             try:
-                                for item in action["replicate_to"]:
-                                    result = self.replicate_request(item, *have_process)
+                                for item in action["redirect_to"]:
+                                    result = self.redirect_request(item, *have_process)
                                     if result != 1:
                                         raise ValueError("The replication expect that was one row affected, returned [%s]" % result)
                                 # If don' had a problem, so finish the request
@@ -196,11 +196,11 @@ class Manager(Thread):
             log.critical("Was not possible to record the status [%s] - [%s] in the row [%s]." % (status, message, queue_id))
         return None if result is None or len(result) == 0 else result
 
-    def replicate_request(self, action, *args):
+    def redirect_request(self, action, *args):
         """
-        Replicate a action in the sync
+        Redirect a action in the sync to others actions
         """
         request = [ action, ]
         request.extend(args)
-        result = self.manager.execute_sp(self.attrib["sp_replicate_row"], details=True, *request)
+        result = self.manager.execute_sp(self.attrib["sp_redirect_row"], details=True, *request)
         return result["affected_rows"]

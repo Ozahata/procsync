@@ -1,0 +1,3 @@
+- Using roolback/autocommit every time each one consume 15% of process for a 
+  list of 5000 action (with 2 destinations), so need test if will low the 
+  performance if you can set like parameters.

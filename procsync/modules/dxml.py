@@ -72,23 +72,23 @@ class ActionDict(dict):
                             self[clone["name"]] = clone
                         # Remove the duplicate
                         item["attrib"].pop("duplicate")
-                if item["tag"] == "replicate":
+                if item["tag"] == "redirect":
                     self._replication_parse(name, item)
         except Exception, e:
             raise StandardError("The file [%s] was malformed: [%s] " % (file_name, e))
 
     def _replication_parse(self, name, element):
         attrib = element["attrib"]
-        replicate_to = format_value(attrib, "to", None)
-        if replicate_to is None: raise StandardError("The attribute [to] in the replicate [%s] need be declared" % name)
-        replicate_to = [ item.strip() for item in replicate_to.split(",") if item.strip() != "" ]
+        redirect_to = format_value(attrib, "to", None)
+        if redirect_to is None: raise StandardError("The attribute [to] in the redirect [%s] need be declared" % name)
+        redirect_to = [ item.strip() for item in redirect_to.split(",") if item.strip() != "" ]
         # Check if all the actions exist
-        for action in replicate_to:
+        for action in redirect_to:
             if action not in self.keys():
-                raise ValueError("The action [%s] in the replicate [%s] not exist in the action list" % (action, name))
+                raise ValueError("The action [%s] in the redirect [%s] not exist in the action list" % (action, name))
         self[name] = {
                       "tag": element["tag"],
-                      "replicate_to": replicate_to[:],
+                      "redirect_to": redirect_to[:],
                       "reprocess_time": format_value(attrib, "reprocess_time", 180),
                       "retry": format_value(attrib, "reprocess_time", 0)
                       }

@@ -38,4 +38,10 @@ v0.8.2, 2012-06-20 - Connection of MySQL can be configure to make a action
                      verbose>1. 
 v0.8.3, 2012-06-22 - Adding a "replicate" attribute in the thread configuration
                      to multiply the thread and avoid duplication.
+v0.8.4, 2012-06-29 - Rename the "replicate" attribute to "instances" and remove
+                     the run_list that became unnecessary.
+                   - Change the tag "replicate" in action to "redirect" to be
+                     more easy to understand that will get the action and 
+                     redirect to others actions.
+                   - Change the sp to accept when have a database error.
                      

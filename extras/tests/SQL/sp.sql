@@ -17,10 +17,9 @@ BEGIN
     SELECT COUNT(id) INTO @rows_pool 
       FROM queue
      WHERE server_name = _server_name
-       AND ((process_status = 1
-       AND schedule is NULL)
-        OR (process_status = 2
-       AND schedule < now()));
+       AND process_status in (1, 2, 4)
+       AND (schedule is NULL OR schedule < now())
+     ORDER BY FIELD(process_status, 2, 1, 4);
     /*
     If dont have a process running, get only one process so we need "lock" the
         row to process only by this server_name.
@@ -36,9 +35,10 @@ BEGIN
               process_status = 1,
               last_update_date = now()
         WHERE process_status = 0
-          AND server_name is NULL
-          AND (schedule is NULL
-          OR schedule < now()) LIMIT 1;
+          AND (server_name = _server_name OR server_name is NULL)
+          AND (schedule is NULL OR schedule < now())
+        ORDER BY id 
+        LIMIT 1;
     END IF; 
 
     SELECT id, action_name, from_column_value, server_name, process_status, 
@@ -46,9 +46,9 @@ BEGIN
            last_update_date, inserted_by
       FROM queue
      WHERE server_name = _server_name
-       AND process_status < 3
-       AND (schedule is NULL
-        OR schedule < now())
+       AND process_status in (0, 1, 2, 4)
+       AND (schedule is NULL OR schedule < now())
+     ORDER BY FIELD(process_status, 2, 1, 4, 0)
      LIMIT 1;
 END$$
 
@@ -67,11 +67,11 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `procsync`.`ps_update_request`
     _reprocess_time INT UNSIGNED
 )
 BEGIN
+    SET @server_process_retry = _process_retry;
     -- Process status 0 means success. Remove from queue.
     IF _process_status = 0 
     THEN
-        DELETE FROM queue
-         WHERE id = _id;
+        DELETE FROM queue WHERE id = _id;
     END IF;
     -- Process status 1 (Configuration error), 3 (System error). Set status 3.
     IF _process_status in (1, 3) 
@@ -86,24 +86,65 @@ BEGIN
     -- Set status 2 (Reprocess) if not reach the limit, other else 3 (Error).
     IF _process_status = 2 
     THEN
-        SET @server_process_status = 2, @reprocess=0;
-        SELECT process_retry INTO @reprocess
+        SET @server_process_status = 2, @reprocess=0, @old_process_status=2;
+        SELECT process_retry, process_status
+          INTO @reprocess, @old_process_status
           FROM queue
          WHERE id = _id;
-        -- Check the reprocess
-        IF @reprocess + 1 > _process_retry 
-        THEN
+        -- Case was a database problem, need reset the retry
+        IF @old_process_status = 4 THEN
+            SET @reprocess = 0;
+        END IF;
+        IF @reprocess + 1 > @server_process_retry THEN
             SET @server_process_status = 3;
         ELSE
             SET @reprocess = @reprocess + 1;
         END IF;
-         
         UPDATE queue
            SET process_status = @server_process_status,
                error_description = _error_description,
                process_retry = @reprocess,
                schedule = DATE_ADD(now(), INTERVAL _reprocess_time SECOND),
-               last_update_date = now()           
+               last_update_date = now()
+         WHERE id = _id;
+    END IF;
+    -- Database error, reprocess
+    IF _process_status = 4 THEN
+        SET @server_process_status = 4, @reprocess=0, @old_process_status=4;
+        SET @schedule = DATE_ADD(now(), INTERVAL _reprocess_time SECOND);
+        SELECT process_retry, process_status
+          INTO @reprocess, @old_process_status
+          FROM queue
+         WHERE id = _id;
+        -- Case was not a database problem, need reset the retry
+        IF @old_process_status != 4 THEN
+            SET @reprocess = 0;
+        END IF;
+        -- If reprocess was 0 use a default 3
+        IF @server_process_retry = 0 THEN
+            SET @server_process_retry = 3;
+        ELSE
+            -- In case that alread have, will be a double to check
+            SET @server_process_retry = @server_process_retry * 2;
+        END IF;
+        -- Use the same procedure to schedule
+        IF _reprocess_time = 0 THEN
+            SET @schedule = DATE_ADD(now(), INTERVAL 180 SECOND);
+        ELSE
+            -- In case that alread have, will be a double to check
+            SET @schedule = DATE_ADD(now(), INTERVAL (_reprocess_time * 2) SECOND);
+        END IF;
+        IF @reprocess + 1 > @server_process_retry THEN
+            SET @server_process_status = 3;
+        ELSE
+            SET @reprocess = @reprocess + 1;
+        END IF;
+        UPDATE queue
+           SET process_status = @server_process_status,
+               error_description = _error_description,
+               process_retry = @reprocess,
+               schedule = @schedule,
+               last_update_date = now()
          WHERE id = _id;
     END IF;
 END$$
@@ -113,10 +154,10 @@ DELIMITER ;
 
 DELIMITER $$
 
-DROP PROCEDURE IF EXISTS `procsync`.`ps_replicate_request`$$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `procsync`.`ps_replicate_request` 
+DROP PROCEDURE IF EXISTS `procsync`.`ps_redirect_request`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `procsync`.`ps_redirect_request` 
 (
-    _replicate_action VARCHAR(255),
+    _redirect_action VARCHAR(255),
     _id BIGINT UNSIGNED,
     _action_name VARCHAR(64),
     _from_column_value VARCHAR(50),
@@ -133,7 +174,7 @@ BEGIN
     INSERT INTO `queue` 
     (`action_name`, `from_column_value`, `server_name`, `process_status`, `error_description`, `process_retry`, `schedule`, `created_date`, `last_update_date`, `inserted_by`) 
     VALUES
-    (_replicate_action,  _from_column_value, NULL, 0, NULL, _process_retry, _schedule, now(), now(), CONCAT('(ADD BY REPLICATED)', _inserted_by));
+    (_redirect_action,  _from_column_value, NULL, 0, NULL, _process_retry, _schedule, now(), now(), CONCAT('(ADD BY REDIRECT)', _inserted_by));
 END$$
 
 DELIMITER ;

@@ -875,9 +875,9 @@ http://www.gnu.org/software/src-highlite -->
     <span style="font-weight: bold"><span style="color: #0000FF">&lt;action</span></span> ...<span style="font-weight: bold"><span style="color: #0000FF">&gt;</span></span>
         ...
     <span style="font-weight: bold"><span style="color: #0000FF">&lt;/action&gt;</span></span>
-    <span style="font-weight: bold"><span style="color: #0000FF">&lt;replicate</span></span> ... <span style="font-weight: bold"><span style="color: #0000FF">/&gt;</span></span>
+    <span style="font-weight: bold"><span style="color: #0000FF">&lt;redirect</span></span> ... <span style="font-weight: bold"><span style="color: #0000FF">/&gt;</span></span>
 <span style="font-weight: bold"><span style="color: #0000FF">&lt;/root&gt;</span></span></tt></pre></div></div>
-<div class="paragraph"><p>Inside the root tag we will be able to have a action or replicate tag that each
+<div class="paragraph"><p>Inside the root tag we will be able to have a action or redirect tag that each
 one have the owns attributes that we can see below.</p></div>
 <h3 id="_attribute_settings">3.1. Attribute settings</h3><div style="clear:left"></div>
 <div class="paragraph"><p>Each tag have your own time of attribute that you can set, check the list below.</p></div>
@@ -988,7 +988,7 @@ one destination.</p></td>
 <td align="center" valign="top"><p class="table">True</p></td>
 <td align="left" valign="top"><p class="table">If one of destination have a error how the behaver that need make.<br />
 If False the process will run all destination and put the row to retry again
-later.</p></td>
+later. *</p></td>
 </tr>
 <tr>
 <td align="center" valign="top"><p class="table">Destination</p></td>
@@ -1014,7 +1014,7 @@ In the connection will contain the way that the request the information.</p></td
 <td align="center" valign="top"><p class="table">True</p></td>
 <td align="left" valign="top"><p class="table">Like the same in Destinations
 tag, this will specify the behaver that is opposite of set on stop_on_error in
-Destinations tag.</p></td>
+Destinations tag. *</p></td>
 </tr>
 <tr>
 <td align="center" valign="top"><p class="table">Destination</p></td>
@@ -1027,13 +1027,13 @@ be a numeric value separate by "," in order that need be pass to destination.
 If not set will considered all the result.</p></td>
 </tr>
 <tr>
-<td align="center" valign="top"><p class="table">Replicate</p></td>
-<td colspan="4" align="left" valign="top"><p class="table">For each parameter set in the attribute will insert one row in the queue.<br />
-The Replicate tag need be insert in the after all request of action to make the
-validation of names.</p></td>
+<td align="center" valign="top"><p class="table">Redirect</p></td>
+<td colspan="4" align="left" valign="top"><p class="table">This action will get the value of the queue and redirect to others actions to be
+process independent. This is useful when you wish update two places but don&#8217;t
+wish that interfere between the actions.</p></td>
 </tr>
 <tr>
-<td align="center" valign="top"><p class="table">Replicate</p></td>
+<td align="center" valign="top"><p class="table">Redirect</p></td>
 <td align="left" valign="top"><p class="table">name</p></td>
 <td align="center" valign="top"><p class="table">N</p></td>
 <td align="center" valign="top"><p class="table"></p></td>
@@ -1041,18 +1041,24 @@ validation of names.</p></td>
 reference the field action_name in the queue.</p></td>
 </tr>
 <tr>
-<td align="center" valign="top"><p class="table">Replicate</p></td>
+<td align="center" valign="top"><p class="table">Redirect</p></td>
 <td align="left" valign="top"><p class="table">to</p></td>
 <td align="center" valign="top"><p class="table">N</p></td>
 <td align="center" valign="top"><p class="table"></p></td>
 <td align="left" valign="top"><p class="table">Name of actions separate by
-","</p></td>
+comma.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<div class="paragraph"><p><strong>NOTE</strong>: In case of stop_on_error is False and occurs error in more than one
-destination, just the last error will be record.</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+In case of stop_on_error is False and occurs error in more than one
+destination, just the last error will be record in the queue.
+</p>
+</li>
+</ul></div>
 <h3 id="_additional_attribute_settings">3.2. Additional Attribute settings</h3><div style="clear:left"></div>
 <h4 id="_mysql_backends">3.2.1. MySQL Backends</h4>
 <div class="tableblock">
@@ -1411,14 +1417,6 @@ cellspacing="0" cellpadding="4">
 </thead>
 <tbody>
 <tr>
-<td align="center" valign="top"><p class="table">application</p></td>
-<td align="left" valign="top"><p class="table">run_list</p></td>
-<td align="center" valign="top"><p class="table">Y</p></td>
-<td align="center" valign="top"><p class="table"></p></td>
-<td align="left" valign="top"><p class="table">Contain the threads that will be execute separate by ",".<br />
-In case this information will not set, will search for all application_name.</p></td>
-</tr>
-<tr>
 <td align="center" valign="top"><p class="table">application_name</p></td>
 <td colspan="4" align="left" valign="top"><p class="table">Each thread need a unique name that represented by
 application_name.</p></td>
@@ -1470,13 +1468,13 @@ other <a href="#Action-Anchor">action file</a> to use instead the default.</p></
 </tr>
 <tr>
 <td align="center" valign="top"><p class="table">application_name</p></td>
-<td align="left" valign="top"><p class="table">replicate</p></td>
+<td align="left" valign="top"><p class="table">instances</p></td>
 <td align="center" valign="top"><p class="table">Y</p></td>
-<td align="center" valign="top"><p class="table">0</p></td>
-<td align="left" valign="top"><p class="table">Get the thread declared
-and replicate n times more, adding the number after application_name.
-In case of this thread are setting in run_list and have the replicate attribute,
-this threads will load automatic, don&#8217;t need set in run_list.</p></td>
+<td align="center" valign="top"><p class="table">1</p></td>
+<td align="left" valign="top"><p class="table">Define how many instances
+of the thread will be create. The additional instances will add the number after
+application_name.
+If the instances set with 0, will not run the thread.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1525,10 +1523,10 @@ have some row to process (For each row returned will be run a process in order).
 the information of the thread.</p></td>
 </tr>
 <tr>
-<td align="left" valign="top"><p class="table">sp_replicate_row</p></td>
+<td align="left" valign="top"><p class="table">sp_redirect_row</p></td>
 <td align="center" valign="top"><p class="table">Y</p></td>
-<td align="center" valign="top"><p class="table">ps_replicate_request</p></td>
-<td align="left" valign="top"><p class="table">Used when wish replicate the
+<td align="center" valign="top"><p class="table">ps_redirect_request</p></td>
+<td align="left" valign="top"><p class="table">Used when wish redirect the
 same queue to other actions.</p></td>
 </tr>
 <tr>
@@ -1638,12 +1636,11 @@ The reprocess_time is the time that will wait between the re-process.
 </tbody>
 </table>
 </div>
-<div class="paragraph"><p><strong>sp_replicate_row</strong><br />
+<div class="paragraph"><p><strong>sp_redirect_row</strong><br />
 This stored procedure will insert others queue to execute the same row to other
 actions.<br />
-This sp will call for each action that request to replicate due the complexity
-of code to split
-and insert inside the stored procedure</p></div>
+This sp will call for each action that request to redirect due the complexity
+of code to split and insert inside the stored procedure.</p></div>
 <div class="tableblock">
 <table rules="all"
 frame="border"
@@ -1654,15 +1651,15 @@ cellspacing="0" cellpadding="4">
 <tbody>
 <tr>
 <td align="left" valign="top"><p class="table"><strong>Input</strong></p></td>
-<td align="left" valign="top"><p class="table">replicate_action, sp_search_row_result</p></td>
-<td align="left" valign="top"><p class="table">The replicate_list contain the name of the new action that need insert.<br />
+<td align="left" valign="top"><p class="table">redirect_action, sp_search_row_result</p></td>
+<td align="left" valign="top"><p class="table">The redirect_list contain the name of the new action that need insert.<br />
 The sp_search_row_result is the information returned by the sp that will send to
 the sp.</p></td>
 </tr>
 <tr>
 <td align="left" valign="top"><p class="table"><strong>Output</strong></p></td>
 <td align="left" valign="top"><p class="table"></p></td>
-<td align="left" valign="top"><p class="table">The same quantity of item in the replicate_list (affected rows).</p></td>
+<td align="left" valign="top"><p class="table">The same quantity of item in the redirect_list (affected rows).</p></td>
 </tr>
 </tbody>
 </table>
@@ -1711,7 +1708,7 @@ but is possible to change to RotatingFileHandler.</p></div>
 <div id="footer">
 <div id="footer-text">
 Version 0.1<br />
-Last updated 2012-06-22 13:17:32 JST
+Last updated 2012-06-23 14:58:49 JST
 </div>
 </div>
 </body>
